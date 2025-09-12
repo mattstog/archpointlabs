@@ -1,103 +1,161 @@
-import Image from "next/image";
+"use client"
+import { useChat } from "@ai-sdk/react"
+import type React from "react"
 
-export default function Home() {
+import { useState, useRef, useEffect } from "react"
+import { motion } from "motion/react"
+import { ArrowUp } from "lucide-react"
+import { Figtree } from "next/font/google"
+const figtree = Figtree({ subsets: ["latin"] })
+
+export default function Chat() {
+  const [input, setInput] = useState("")
+  const { messages, sendMessage } = useChat()
+  const [arrived, setArrived] = useState(false)
+  const [showLabel, setShowLabel] = useState(false)
+  const [showExamples, setShowExamples] = useState(false)
+
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const examples = ["Explain their past work", "I'd like an app", "I'd like a website"]
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
+    }
+  }, [messages])
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (input.trim()) {
+      sendMessage({ text: input })
+      setInput("")
+    }
+  }
+
+  const hasMessages = messages.length > 0
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className={figtree.className}>
+      <div
+        className="flex flex-col w-full min-w-screen min-h-screen py-24 px-12 mx-auto relative items-center text-left bg-cover bg-center bg-gray-900"
+        style={{ backgroundImage: "url('/nice.png')" }}
+      >
+        <div className="absolute top-6 left-6 text-xl font-bold text-white drop-shadow-lg">Meld</div>
+        <div className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg">Book a Call</div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        {/* travel wrapper */}
+        <motion.div
+          className="absolute top-1/6 left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center ml-85"
+          initial={{ y: "-40dvh" }}
+          animate={{ y: 0 }} 
+          transition={{
+            y: { duration: 3.5, ease: "linear" },
+            opacity: { duration: 0.4 },
+          }}
+          onAnimationComplete={() => setArrived(true)}
+        >
+          {/** Our sick glass UI */}
+          {hasMessages && (
+            <motion.div
+              className="mb-8 w-[672px] h-80 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
+              ref={scrollContainerRef}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
+            >
+              <div className="space-y-4">
+                {messages.map((m) => (
+                  <div key={m.id} className="text-white">
+                    <div className="font-semibold mb-1">{m.role === "user" ? "Me:" : "Milo:"}</div>
+                    <div className="text-white/90 leading-relaxed">
+                      {m.parts.map((p, i) => (p.type === "text" ? <div key={`${m.id}-${i}`}>{p.text}</div> : null))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/** Text label */}
+          {!hasMessages && (
+            <motion.div
+              className="min-w-[672px] -z-10 pointer-events-none font-bold text-2xl text-white"
+              initial={false}
+              animate={showLabel ? { opacity: 1, y: -12 } : { opacity: 0, y: 50 }}
+              transition={{ type: "spring", bounce: 0.2, duration: 1 }}
+            >
+              Hey, I'm Milo! What do you want to learn about Meld?
+            </motion.div>
+          )}
+
+          {/** Orb / Form */}
+          <motion.div
+            className="relative z-10 mb-2"
+            initial={false}
+            animate={arrived ? { width: 672, height: 64 } : { width: 48, height: 48 }} // open after arrival
+            transition={{
+              width: { type: "spring", bounce: 0.2, duration: 1.3 },
+              height: { type: "spring", bounce: 0.2, duration: 1.3 },
+            }}
+            onAnimationComplete={() => {
+              setTimeout(() => setShowLabel(true), 200)
+              setTimeout(() => setShowExamples(true), 1200)
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+            <div className="relative h-full w-full">
+              <div className="absolute inset-0 rounded-full bg-white dark:bg-zinc-900 z-0">
+                <motion.form
+                  key="form"
+                  className="absolute inset-0 z-10"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  onSubmit={handleSubmit}
+                >
+                  <input
+                    className={`dark:bg-zinc-900 h-full w-full border border-zinc-300 dark:border-zinc-800 rounded-full shadow-xl px-4 bg-transparent pr-20 focus:outline-none focus:ring-0 ${
+                      arrived ? "" : "pointer-events-none"
+                    }`}
+                    value={input}
+                    placeholder={arrived ? "Ask away..." : ""}
+                    onChange={(e) => setInput(e.currentTarget.value)}
+                  />
+                  {input && arrived && (
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-black hover:bg-gray-800 hover:cursor-pointer rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <ArrowUp className="w-5 h-5 text-white" />
+                    </button>
+                  )}
+                </motion.form>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.ul className="mt-5 flex gap-4 items-center justify-start w-full">
+            {examples.map((t, i) => (
+              <motion.li
+                key={t}
+                initial={false}
+                animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                transition={{
+                  type: "spring",
+                  bounce: 0.15,
+                  duration: 0.5,
+                  delay: i * 0.3,
+                }}
+                onClick={() => setInput(t)}
+                className="px-3 py-1 rounded-full border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm shadow cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                {t}
+              </motion.li>
+            ))}
+          </motion.ul>
+        </motion.div>
+      </div>
+    </main>
+  )
 }
