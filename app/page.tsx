@@ -15,7 +15,6 @@ export default function Chat() {
   const [showLabel, setShowLabel] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const examples = ["Explain their past work", "I'd like an app", "I'd like a website"]
@@ -92,7 +91,7 @@ export default function Chat() {
 
           {/** Orb / Form */}
           <motion.div
-            className="relative z-10 mb-2"
+            className="relative z-10 mb-2 rounded-full border border-zinc-300 shadow-xl"
             initial={false}
             animate={arrived ? { width: 672, height: 64 } : { width: 48, height: 48 }} // open after arrival
             transition={{
@@ -114,7 +113,7 @@ export default function Chat() {
                   onSubmit={handleSubmit}
                 >
                   <input
-                    className={`dark:bg-zinc-900 h-full w-full border border-zinc-300 dark:border-zinc-800 rounded-full shadow-xl px-4 bg-transparent pr-20 focus:outline-none focus:ring-0 ${
+                    className={`h-full w-full rounded-full px-4 bg-transparent pr-20 focus:outline-none focus:ring-0 ${
                       arrived ? "" : "pointer-events-none"
                     }`}
                     value={input}
