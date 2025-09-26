@@ -41,7 +41,13 @@ export default function Chat() {
         className="flex flex-col w-full min-w-screen min-h-screen py-24 px-12 mx-auto relative items-center text-left bg-cover bg-center bg-gray-900"
         style={{ backgroundImage: "url('/nice.png')" }}
       >
-        <div className="absolute top-6 left-6 text-xl font-bold text-white drop-shadow-lg">Meld</div>
+        <div className="absolute top-6 left-6 drop-shadow-lg">
+          <img
+            src="/archpoint-white.svg"
+            alt="Archpoint Logo"
+            className="h-8 w-auto"
+          />
+        </div>
         <div className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg">Book a Call</div>
 
         {/* travel wrapper */}
@@ -85,7 +91,7 @@ export default function Chat() {
               animate={showLabel ? { opacity: 1, y: -12 } : { opacity: 0, y: 50 }}
               transition={{ type: "spring", bounce: 0.2, duration: 1 }}
             >
-              Hey, I'm Milo! What do you want to learn about Meld?
+              Hey, I&apos;m Milo! What do you want to learn about Archpoint?
             </motion.div>
           )}
 
