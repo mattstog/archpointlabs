@@ -23,3 +23,19 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+.scrollarea {
+  scrollbar-width: thin;                        /* Firefox */
+  scrollbar-color: rgba(0,0,0,0.6) transparent; /* black pill on no track */
+}
+
+.scrollarea::-webkit-scrollbar {
+  width: 8px;                                   /* thin */
+}
+.scrollarea::-webkit-scrollbar-track {
+  background: transparent;                      /* removes white track */
+}
+.scrollarea::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.6);                  /* black pill */
+  border-radius: 9999px;                        /* fully rounded */
+}

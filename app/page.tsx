@@ -68,7 +68,7 @@ export default function Chat() {
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
-              className="mb-8 w-[672px] h-120 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
+              className="scrollarea mb-8 w-[672px] h-120 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
               ref={scrollContainerRef}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -81,11 +81,26 @@ export default function Chat() {
                     .map((p) => p.text)
                     .join("");
 
+                  const isUser = m.role === "user";
+                  
                   return (
-                    <div key={m.id} className="text-white/90">
-                      <div className="font-semibold mb-1">{m.role === "user" ? "Me:" : "Milo:"}</div>
-                      <div className="prose prose-inherit max-w-none leading-relaxed">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                    <div
+                      key={m.id}
+                      className={`flex ${isUser ? "justify-end text-left" : "justify-start text-left"}`}
+                    >
+                      <div
+                        className={`text-white/90 ${
+                          isUser ? "mr-4 bg-blue-500 px-4 py-2 rounded-full flex items-center" : ""
+                        }`}
+                      >
+                        {!isUser && (
+                          <div className="font-semibold mb-1">
+                            Milo:
+                          </div>
+                        )}
+                        <div className="prose prose-inherit max-w-none leading-relaxed">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                        </div>
                       </div>
                     </div>
                   );
