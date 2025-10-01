@@ -5,7 +5,10 @@ import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { motion } from "motion/react"
 import { ArrowUp } from "lucide-react"
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Figtree } from "next/font/google"
+
 const figtree = Figtree({ subsets: ["latin"] })
 
 export default function Chat() {
@@ -17,7 +20,7 @@ export default function Chat() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const examples = ["Explain their past work", "I'd like an app", "I'd like a website"]
+  const examples = ["Explain their past work", "I'd like an app", "I'd like a website", "I'd like an automation"]
 
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -39,7 +42,7 @@ export default function Chat() {
     <main className={figtree.className}>
       <div
         className="flex flex-col w-full min-w-screen min-h-screen py-24 px-12 mx-auto relative items-center text-left bg-cover bg-center bg-gray-900"
-        style={{ backgroundImage: "url('/alright-here.png')" }}
+        style={{ backgroundImage: "url('/new-hero-bro.png')" }}
       >
         <div className="absolute top-6 left-6 drop-shadow-lg flex flex-row items-center space-x-2">
           <img
@@ -65,21 +68,28 @@ export default function Chat() {
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
-              className="mb-8 w-[672px] h-80 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
+              className="mb-8 w-[672px] h-120 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
               ref={scrollContainerRef}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
             >
               <div className="space-y-4">
-                {messages.map((m) => (
-                  <div key={m.id} className="text-white">
-                    <div className="font-semibold mb-1">{m.role === "user" ? "Me:" : "Milo:"}</div>
-                    <div className="text-white/90 leading-relaxed">
-                      {m.parts.map((p, i) => (p.type === "text" ? <div key={`${m.id}-${i}`}>{p.text}</div> : null))}
+                {messages.map((m) => {
+                  const content = m.parts
+                    .filter((p) => p.type === "text")
+                    .map((p) => p.text)
+                    .join("");
+
+                  return (
+                    <div key={m.id} className="text-white/90">
+                      <div className="font-semibold mb-1">{m.role === "user" ? "Me:" : "Milo:"}</div>
+                      <div className="prose prose-inherit max-w-none leading-relaxed">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
           )}

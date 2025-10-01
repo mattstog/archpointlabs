@@ -226,7 +226,7 @@ Since early 2025, Matt has been successfully delivering custom software solution
 **Background:**
 - University of Georgia Management Information Systems and Computer Science graduate
 - Developed 15+ SEO-optimized and high-converting websites
-- Developed several mobile apps and created core feature for viral health app
+- Developed several mobile apps and created a core feature for viral health app
 - Track record of innovative projects including hardware smart assistants and software browser automation tools
 - Strong focus on web & mobile app development, digital design and creative problem-solving
 
