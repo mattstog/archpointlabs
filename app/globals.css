@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: linear-gradient(to bottom, #4a87d5, #6ea7e6);
   --foreground: #171717;
 }
 
@@ -19,9 +19,11 @@
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+html, body {
+  min-height: 100%;
+  background-color: #3f80d0; /* fallback for bars */
+  background-image: linear-gradient(to bottom, #4a87d5, #6ea7e6);
+  background-attachment: scroll; /* avoid iOS white flash */
 }
 
 .scrollarea {

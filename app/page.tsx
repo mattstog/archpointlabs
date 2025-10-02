@@ -11,6 +11,9 @@ import { Figtree } from "next/font/google"
 
 const figtree = Figtree({ subsets: ["latin"] })
 
+const SUBHEAD =
+  "Custom apps, websites, and automations that lift your business above the rest. Chat with our AI Assistant, Milo, to discover how Archpoint Labs can help your business grow."
+
 export default function Chat() {
   const [input, setInput] = useState("")
   const { messages, sendMessage } = useChat()
@@ -28,6 +31,19 @@ export default function Chat() {
     }
   }, [messages])
 
+  function useIsMobile(breakpoint = 768) {
+    const [isMobile, setIsMobile] = useState(false)
+
+    useEffect(() => {
+      const check = () => setIsMobile(window.innerWidth < breakpoint)
+      check()
+      window.addEventListener("resize", check)
+      return () => window.removeEventListener("resize", check)
+    }, [breakpoint])
+
+    return isMobile
+  }
+
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (input.trim()) {
@@ -38,15 +54,17 @@ export default function Chat() {
 
   const hasMessages = messages.length > 0
 
+  const isMobile = useIsMobile()
+
   return (
-    <main className={figtree.className}>
+    <main className={`${figtree.className} min-h-screen w-full`}>
       <div
-        className="flex flex-col w-full min-w-screen min-h-screen py-24 px-12 mx-auto relative items-center text-left bg-cover bg-center bg-gray-900"
+        className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left bg-cover bg-center bg-fixed"
         style={{ backgroundImage: "url('/new-hero-bro.png')" }}
       >
         <div className="absolute top-6 left-6 drop-shadow-lg flex flex-row items-center space-x-2">
           <img
-            src="/archpoint-white.svg"
+            src="/apl-logo.svg"
             alt="Archpoint Logo"
             className="h-8 w-auto"
           />
@@ -54,9 +72,21 @@ export default function Chat() {
         </div>
         <div className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg">Book a Call</div>
 
+        {/** Headline & Subheadline */}
+        <div
+          className="absolute left-24 top-32 text-white drop-shadow-l max-w-xl pointer-events-none z-0 hidden lg:block"
+        >
+          <h1 className="text-6xl font-extrabold leading-tight">
+            Building <br/> What's Next.
+          </h1>
+          <p className="mt-3 text-lg leading-relaxed text-white/90">
+            {SUBHEAD}
+          </p>
+        </div>
+
         {/* travel wrapper */}
         <motion.div
-          className="absolute top-1/6 left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center ml-85"
+          className="absolute top-1/6 left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center lg:ml-85 w-full max-w-[672px] px-4"
           initial={{ y: "-40dvh" }}
           animate={{ y: 0 }} 
           transition={{
@@ -68,7 +98,7 @@ export default function Chat() {
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
-              className="scrollarea mb-8 w-[672px] h-120 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
+              className="scrollarea mb-8 w-full h-[50vh] sm bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
               ref={scrollContainerRef}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -112,7 +142,7 @@ export default function Chat() {
           {/** Text label */}
           {!hasMessages && (
             <motion.div
-              className="min-w-[672px] -z-10 pointer-events-none font-bold text-2xl text-white"
+              className="lg:min-w-[672px] md:w-full sm:w-full text-center -z-10 pointer-events-none font-bold text-2xl text-white"
               initial={false}
               animate={showLabel ? { opacity: 1, y: -12 } : { opacity: 0, y: 50 }}
               transition={{ type: "spring", bounce: 0.2, duration: 1 }}
@@ -125,7 +155,7 @@ export default function Chat() {
           <motion.div
             className="relative z-10 mb-2 rounded-full border border-zinc-300 shadow-xl"
             initial={false}
-            animate={arrived ? { width: 672, height: 64 } : { width: 48, height: 48 }} // open after arrival
+            animate={arrived ? { width: isMobile ? 380 : 672, height: 64 } : { width: 48, height: 48 }} // open after arrival
             transition={{
               width: { type: "spring", bounce: 0.2, duration: 1.3 },
               height: { type: "spring", bounce: 0.2, duration: 1.3 },
@@ -166,7 +196,7 @@ export default function Chat() {
             </div>
           </motion.div>
 
-          <motion.ul className="mt-5 flex gap-4 items-center justify-start w-full">
+          <motion.ul className="mt-5 flex flex-wrap gap-4 items-center justify-center w-full">
             {examples.map((t, i) => (
               <motion.li
                 key={t}
