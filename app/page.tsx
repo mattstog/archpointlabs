@@ -77,7 +77,7 @@ export default function Chat() {
           className="absolute left-24 top-32 text-white drop-shadow-l max-w-xl pointer-events-none z-0 hidden lg:block"
         >
           <h1 className="text-6xl font-extrabold leading-tight">
-            Building <br/> What's Next.
+            Building <br/> What&apos;s Next.
           </h1>
           <p className="mt-3 text-lg leading-relaxed text-white/90">
             {SUBHEAD}
@@ -90,8 +90,8 @@ export default function Chat() {
           initial={{ y: "-40dvh" }}
           animate={{ y: 0 }} 
           transition={{
-            y: { duration: 3.5, ease: "linear" },
-            opacity: { duration: 0.4 },
+            y: { delay: 1.2, duration: 3.5, ease: "linear" },
+            opacity: { delay: 1.2, duration: 0.4 },
           }}
           onAnimationComplete={() => setArrived(true)}
         >
