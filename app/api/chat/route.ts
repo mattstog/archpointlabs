@@ -1,67 +1,126 @@
-import { openai } from '@ai-sdk/openai';
-import { streamText, UIMessage, convertToModelMessages } from 'ai';
+// app/api/chat/route.ts
+import { NextRequest } from "next/server";
+import fs from "node:fs";
+import path from "node:path";
+import { neon } from "@neondatabase/serverless";
 
+import { openai } from "@ai-sdk/openai";
+import { streamText, UIMessage, convertToModelMessages } from "ai";
+
+// Force Node runtime so fs + Neon work on Vercel
+export const runtime = "nodejs";
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
-export async function POST(req: Request) {
+const sql = neon(process.env.POSTGRES_URL!);
+
+// type UserInfo = { ip?: string | null; userAgent?: string | null; timestamp?: string };
+
+/**
+ * EXACT prompt-loading behavior from your other file:
+ * - Reads prompts/system-prompt.md
+ * - Finds the line starting with "You are an AI consultant"
+ * - Slices from there, strips markdown headings and bold
+ * - Falls back to a default if file not found
+ */
+function getSystemPrompt(): string {
+  try {
+    const promptPath = path.join(process.cwd(), "prompts", "system-prompt.md");
+    const promptContent = fs.readFileSync(promptPath, "utf8");
+    const lines = promptContent.split("\n");
+    const contentStart = lines.findIndex((line) => line.startsWith("You are an AI consultant"));
+    return lines
+      .slice(contentStart)
+      .join("\n")
+      .replace(/#+\s*/g, "")
+      .replace(/\*\*/g, "");
+  } catch {
+    console.warn("Could not load system prompt file, using default");
+    return `You are Milo, an AI consultant for Archpoint Labs, a cutting-edge consulting firm specializing in AI transformation. 
+    You help businesses understand how AI can solve their challenges through strategy, implementation, automation, and training. 
+    Be professional, helpful, and solution-oriented while guiding potential clients toward deeper engagement with our services.`;
+  }
+}
+
+/**
+ * EXACT Neon logging behavior from your other file, adapted to be called
+ * after streaming completes so we can log the full assistant response.
+ */
+async function logConversation(messages: any[], response: string, userInfo?: UserInfo) {
+  try {
+    const sessionId = Date.now().toString();
+    await sql`
+      INSERT INTO conversations (session_id, ip, user_agent, message_count, messages, ai_response)
+      VALUES (
+        ${sessionId},
+        ${userInfo?.ip ?? "unknown"},
+        ${userInfo?.userAgent ?? "unknown"},
+        ${messages.length},
+        ${JSON.stringify(messages)}::jsonb,
+        ${response}
+      )
+    `;
+    console.log(`💬 Conversation logged to Neon: ${sessionId}`);
+  } catch (err) {
+    console.error("Error logging conversation:", err);
+  }
+}
+
+// ...imports and helpers (getSystemPrompt, logConversation) stay the same
+
+type UserInfo = { ip: string; userAgent?: string | null; timestamp?: string };
+
+export async function POST(req: NextRequest) {
   const { messages }: { messages: UIMessage[] } = await req.json();
+  const systemPrompt = getSystemPrompt();
 
+  // Get IP from headers (NextRequest has no `.ip`)
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+
+  const userInfo: UserInfo = {
+    ip,
+    userAgent: req.headers.get("user-agent"),
+    timestamp: new Date().toISOString(),
+  };
+
+  // We'll compute final text inside onFinish:
   const result = streamText({
-    model: openai('gpt-5-mini'),
+    model: openai("gpt-4o-mini"),
     messages: convertToModelMessages(messages),
-    system: `You are a portfolio chatbot named Milo working for Aidan Kane, a website and app developer with over two years of experience. Your role is to introduce Aidan to potential clients, answer questions about his services, and help visitors understand how he works.
--------------
-About Aidan:
+    system: systemPrompt,
 
-Aidan is a fast, execution-driven developer who makes significant progress in days, not weeks.
+    // ✅ Keep just onFinish; remove onToken
+    onFinish: async ({ responseMessages }: any) => {
+      try {
+        // Pull the assistant message text from responseMessages
+        const assistant = responseMessages?.find((m: any) => m.role === "assistant");
+        const finalResponseText =
+          typeof assistant?.content === "string"
+            ? assistant.content
+            : (assistant?.content ?? [])
+                .filter((p: any) => p.type === "text")
+                .map((p: any) => p.text)
+                .join("");
 
-He’s a great storyteller who prioritizes understanding the client deeply before writing a single line of code.
-
-He combines creativity and technology to build products with the same balance of artistry and technical precision seen in Pixar or Studio Ghibli films.
-
--------------
-Services:
-
-Aidan designs and builds websites and apps.
-
-His work is modern, intuitive, and tailored to the client’s needs.
-
-He can handle a wide range: professional websites for lawyers, creative blogs, SaaS startup landing pages, or full-stack mobile apps.
--------------
-Portfolio:
-
-Direct visitors to [portfolio-website-url/the-proof] for examples of past work.
-
--------------
-Process:
-
-Aidan sets a contract before starting, establishing timelines and communication expectations upfront.
-
--------------
-Pricing:
-
-Payment is structured: half upfront (ensures buy-in) and half upon completion (ensures satisfaction).
-
-Website prices range from $500-$5000 and mobile apps range from $2000-$15000 depending on complexity. These are estimates though, so direct the user to book a call for more accurate pricing.
-
--------------
-Tone & How to Respond:
-
-Speak casually and professionally. Remember that you work for Aidan, and you ultimately are here to find details out about prospective clients and direct them to book a call.
-
-Be curious about the visitor’s business and occasionally ask light follow-up questions to show interest.
-
-Always remain approachable, clear, and informative.
-
-DO NOT get overly technical -- you should not disclose the technology required to build their required product.
-
-DO NOT offer to build anything for the client -- be comfortable refusing if they ask. After a few messages, once it seems the user is interested, direct the user to book a call with Aidan to discuss details.
-
-MOST IMPORTANTLY: Respond very concisely, in 1-2 sentences, only speaking about what's relevant to the user's question. Only say what is absolutely necessary, and then take part of it out.`
+        await logConversation(messages as any[], finalResponseText ?? "", userInfo);
+      } catch (err) {
+        console.error("logConversation failed:", err);
+      }
+    },
   });
 
-  console.log(messages);
+  // (optional) debug prints left as-is
+  console.dir(messages, { depth: null });
+  console.table(
+    messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      text: m.parts.filter((p) => p.type === "text").map((p) => p.text).join(""),
+    }))
+  );
 
   return result.toUIMessageStreamResponse();
 }
