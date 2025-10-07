@@ -166,7 +166,7 @@ export default function Chat() {
             }}
           >
             <div className="relative h-full w-full">
-              <div className="absolute inset-0 rounded-full bg-white dark:bg-zinc-900 z-0">
+              <div className="absolute inset-0 rounded-full bg-white z-0">
                 <motion.form
                   key="form"
                   className="absolute inset-0 z-10"
@@ -209,7 +209,7 @@ export default function Chat() {
                   delay: i * 0.3,
                 }}
                 onClick={() => setInput(t)}
-                className="px-3 py-1 rounded-full border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm shadow cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow cursor-pointer hover:bg-zinc-100"
               >
                 {t}
               </motion.li>
