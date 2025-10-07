@@ -37,6 +37,26 @@ export default function Chat() {
     }
   }, [messages])
 
+  useEffect(() => {
+  const handleLinkClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'A') {
+      const anchor = target as HTMLAnchorElement;
+      if (anchor.href.startsWith('http')) {
+        e.preventDefault();
+        window.open(anchor.href, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+
+  document.addEventListener('click', handleLinkClick);
+
+  // Cleanup
+  return () => {
+    document.removeEventListener('click', handleLinkClick);
+  };
+}, []);
+
   function useIsMobile(breakpoint = 768) {
     const [isMobile, setIsMobile] = useState(false)
 
@@ -122,7 +142,14 @@ export default function Chat() {
             className="h-10 w-auto"
           />
         </div>
-        <div className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg">Book a Call</div>
+        <a
+          href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg"
+        >
+          Book a Call
+        </a>
 
         {/** Headline & Subheadline */}
         <div
