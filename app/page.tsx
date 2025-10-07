@@ -10,7 +10,7 @@ import { Figtree } from "next/font/google"
 const figtree = Figtree({ subsets: ["latin"] })
 
 const SUBHEAD =
-  "Custom apps, websites, and automations that lift your business above the rest. Chat with our AI Assistant, Milo, to discover how Archpoint Labs can help your business grow."
+ "We develop custom software solutions, like apps, websites and AI agents that fully unlock the potential of your business. Chat with Milo, our AI Assistant, to discover what Archpoint Labs can do for you."
 
 type Message = {
   id: string
@@ -38,6 +38,26 @@ export default function Chat() {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
     }
   }, [messages])
+
+  useEffect(() => {
+  const handleLinkClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'A') {
+      const anchor = target as HTMLAnchorElement;
+      if (anchor.href.startsWith('http')) {
+        e.preventDefault();
+        window.open(anchor.href, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+
+  document.addEventListener('click', handleLinkClick);
+
+  // Cleanup
+  return () => {
+    document.removeEventListener('click', handleLinkClick);
+  };
+}, []);
 
   function useIsMobile(breakpoint = 768) {
     const [isMobile, setIsMobile] = useState(false)
@@ -117,15 +137,21 @@ export default function Chat() {
       <div
         className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left"
       >
-        <div className="absolute top-6 left-6 drop-shadow-lg flex flex-row items-center space-x-2">
+        <div className="absolute top-6 left-6 drop-shadow-lg">
           <img
-            src="/apl-logo.svg"
-            alt="Archpoint Logo"
-            className="h-8 w-auto"
+            src="/logos/AP Side By Side All White Transparent.svg"
+            alt="Archpoint Labs Logo"
+            className="h-10 w-auto"
           />
-          <div className="text-xl font-bold text-white drop-shadow-lg">Archpoint Labs</div>
         </div>
-        <div className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg">Book a Call</div>
+        <a
+          href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg"
+        >
+          Book a Call
+        </a>
 
         {/** Headline & Subheadline */}
         {!(isMobile && hasMessages) && (
@@ -133,7 +159,7 @@ export default function Chat() {
           className="absolute top-18 lg:top-32 inset-x-0 text-center lg:left-24 lg:text-left text-white drop-shadow-l max-w-xl pointer-events-none z-0"
         >
           <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight">
-            Building <br/> What&apos;s Next.
+            Creating <br/> What&apos;s Next.
           </h1>
           <p className="mt-3 text-lg sm:px-3 lg:px-0 leading-relaxed text-white/90">
             {SUBHEAD}
