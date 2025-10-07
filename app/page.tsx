@@ -139,7 +139,7 @@ export default function Chat() {
 
         {/* travel wrapper */}
         <motion.div
-          className="absolute top-1/6 left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center lg:ml-85 w-full max-w-[672px] px-4"
+          className="absolute top-[19%] left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center lg:ml-85 w-full max-w-[672px] px-4"
           initial={{ y: "-40dvh" }}
           animate={{ y: 0 }} 
           transition={{
