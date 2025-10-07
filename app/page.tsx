@@ -115,13 +115,12 @@ export default function Chat() {
         className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left bg-cover bg-center bg-fixed"
         style={{ backgroundImage: "url('/new-hero-bro.png')" }}
       >
-        <div className="absolute top-6 left-6 drop-shadow-lg flex flex-row items-center space-x-2">
+        <div className="absolute top-6 left-6 drop-shadow-lg">
           <img
-            src="/apl-logo.svg"
-            alt="Archpoint Logo"
-            className="h-8 w-auto"
+            src="/logos/AP Side By Side All White Transparent.svg"
+            alt="Archpoint Labs Logo"
+            className="h-10 w-auto"
           />
-          <div className="text-xl font-bold text-white drop-shadow-lg">Archpoint Labs</div>
         </div>
         <div className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg">Book a Call</div>
 
@@ -143,8 +142,8 @@ export default function Chat() {
           initial={{ y: "-40dvh" }}
           animate={{ y: 0 }} 
           transition={{
-            y: { delay: 1.2, duration: 3.5, ease: "linear" },
-            opacity: { delay: 1.2, duration: 0.4 },
+            y: { delay: 1.5, duration: 2, ease: "linear" },
+            opacity: { delay: 1.5, duration: 0.4 },
           }}
           onAnimationComplete={() => setArrived(true)}
         >
