@@ -237,7 +237,7 @@ export default function Chat() {
               e.preventDefault()
               handlePortfolioClick(href)
             }}
-            className="text-blue-300 hover:text-blue-100 underline cursor-pointer bg-transparent border-none p-0 font-inherit"
+            className="text-blue-700 hover:text-blue-900 underline cursor-pointer bg-transparent border-none p-0 font-inherit"
           >
             {children}
           </button>
@@ -250,7 +250,7 @@ export default function Chat() {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-300 hover:text-blue-100 underline"
+          className="text-blue-700 hover:text-blue-900 underline"
         >
           {children}
         </a>
@@ -323,9 +323,7 @@ export default function Chat() {
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
-              className={`scrollarea mb-8 w-full h-[50vh] sm bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth ${isMobile && hasMessages ? "-mt-72 lg:mt-0" : ""}`}
-              ref={scrollContainerRef}
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              className={`scrollarea mb-8 w-full h-[50vh] sm bg-gray-900/20 backdrop-blur-md border border-white/40 rounded-2xl p-6 overflow-y-auto scroll-smooth ${isMobile && hasMessages ? "-mt-72 lg:mt-0" : ""}`}              initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
             >
@@ -339,12 +337,12 @@ export default function Chat() {
                       className={`flex ${isUser ? "justify-end text-left" : "justify-start text-left"}`}
                     >
                       <div
-                        className={`text-white/90 ${
-                          isUser ? "mr-4 bg-blue-500 px-4 py-2 rounded-full flex items-center" : ""
+                        className={`${
+                          isUser ? "mr-4 bg-blue-500 px-4 py-2 rounded-full flex items-center text-white" : "text-white"
                         }`}
                       >
                         {!isUser && (
-                          <div className="font-semibold mb-1">
+                          <div className="font-semibold mb-1 text-white">
                             Milo:
                           </div>
                         )}
