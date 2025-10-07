@@ -26,13 +26,10 @@ export default function Chat() {
   const [showLabel, setShowLabel] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [sessionId] = useState(() => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
-<<<<<<< Updated upstream
-  const [mounted, setMounted] = useState(false);
+    const [usedExamples, setUsedExamples] = useState<string[]>([])
+    const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-||||||| Stash base
-=======
-  const [usedExamples, setUsedExamples] = useState<string[]>([])
->>>>>>> Stashed changes
+
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
