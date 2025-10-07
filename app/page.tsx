@@ -10,7 +10,7 @@ import { Figtree } from "next/font/google"
 const figtree = Figtree({ subsets: ["latin"] })
 
 const SUBHEAD =
-  "Custom apps, websites, and automations that lift your business above the rest. Chat with our AI Assistant, Milo, to discover how Archpoint Labs can help your business grow."
+ "We develop custom software solutions, like apps, websites and AI agents that fully unlock the potential of your business. Chat with Milo, our AI Assistant, to discover what Archpoint Labs can do for you."
 
 type Message = {
   id: string
@@ -130,7 +130,7 @@ export default function Chat() {
           className="absolute left-24 top-32 text-white drop-shadow-l max-w-xl pointer-events-none z-0 hidden lg:block"
         >
           <h1 className="text-6xl font-extrabold leading-tight">
-            Building <br/> What&apos;s Next.
+            Creating <br/> What&apos;s Next.
           </h1>
           <p className="mt-3 text-lg leading-relaxed text-white/90">
             {SUBHEAD}
