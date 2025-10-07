@@ -1,12 +1,10 @@
 "use client"
-import { useChat } from "@ai-sdk/react"
 import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { motion } from "motion/react"
 import { ArrowUp } from "lucide-react"
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { Figtree } from "next/font/google"
 
 const figtree = Figtree({ subsets: ["latin"] })
@@ -14,9 +12,16 @@ const figtree = Figtree({ subsets: ["latin"] })
 const SUBHEAD =
   "Custom apps, websites, and automations that lift your business above the rest. Chat with our AI Assistant, Milo, to discover how Archpoint Labs can help your business grow."
 
+type Message = {
+  id: string
+  role: "user" | "assistant"
+  content: string
+}
+
 export default function Chat() {
   const [input, setInput] = useState("")
-  const { messages, sendMessage } = useChat()
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const [arrived, setArrived] = useState(false)
   const [showLabel, setShowLabel] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
@@ -44,10 +49,56 @@ export default function Chat() {
     return isMobile
   }
 
+  const sendMessage = async (text: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: text,
+    }
+
+    const newMessages = [...messages, userMessage]
+    setMessages(newMessages)
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to get response")
+      }
+
+      const data = await response.json()
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.message,
+      }
+
+      setMessages([...newMessages, assistantMessage])
+    } catch (error) {
+      console.error("Error:", error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Sorry, I encountered an error. Please try again.",
+      }
+      setMessages([...newMessages, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    if (input.trim()) {
-      sendMessage({ text: input })
+    if (input.trim() && !isLoading) {
+      sendMessage(input)
       setInput("")
     }
   }
@@ -106,12 +157,7 @@ export default function Chat() {
             >
               <div className="space-y-4">
                 {messages.map((m) => {
-                  const content = m.parts
-                    .filter((p) => p.type === "text")
-                    .map((p) => p.text)
-                    .join("");
-
-                  const isUser = m.role === "user";
+                  const isUser = m.role === "user"
                   
                   return (
                     <div
@@ -129,12 +175,22 @@ export default function Chat() {
                           </div>
                         )}
                         <div className="prose prose-inherit max-w-none leading-relaxed">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                         </div>
                       </div>
                     </div>
-                  );
+                  )
                 })}
+                {isLoading && (
+                  <div className="flex justify-start text-left">
+                    <div className="text-white/90">
+                      <div className="font-semibold mb-1">Milo:</div>
+                      <div className="prose prose-inherit max-w-none leading-relaxed">
+                        Thinking...
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -155,7 +211,7 @@ export default function Chat() {
           <motion.div
             className="relative z-10 mb-2 rounded-full border border-zinc-300 shadow-xl"
             initial={false}
-            animate={arrived ? { width: isMobile ? 380 : 672, height: 64 } : { width: 48, height: 48 }} // open after arrival
+            animate={arrived ? { width: isMobile ? 380 : 672, height: 64 } : { width: 48, height: 48 }}
             transition={{
               width: { type: "spring", bounce: 0.2, duration: 1.3 },
               height: { type: "spring", bounce: 0.2, duration: 1.3 },
@@ -181,8 +237,9 @@ export default function Chat() {
                     value={input}
                     placeholder={arrived ? "Ask away..." : ""}
                     onChange={(e) => setInput(e.currentTarget.value)}
+                    disabled={isLoading}
                   />
-                  {input && arrived && (
+                  {input && arrived && !isLoading && (
                     <button
                       type="button"
                       onClick={handleSubmit}
@@ -208,8 +265,10 @@ export default function Chat() {
                   duration: 0.5,
                   delay: i * 0.3,
                 }}
-                onClick={() => setInput(t)}
-                className="px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow cursor-pointer hover:bg-zinc-100"
+                onClick={() => !isLoading && setInput(t)}
+                className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow ${
+                  isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-zinc-100"
+                }`}
               >
                 {t}
               </motion.li>
