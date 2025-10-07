@@ -150,21 +150,24 @@ export default function Chat() {
       <div
         className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left"
       >
-        <div className="absolute top-6 left-6 drop-shadow-lg">
-          <img
-            src="/logos/AP Side By Side All White Transparent.svg"
-            alt="Archpoint Labs Logo"
-            className="h-10 w-auto"
-          />
-        </div>
-        <a
-          href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg"
-        >
-          Book a Call
-        </a>
+      <a
+        href="https://archpointlabs.com"
+        className="absolute top-6 left-6 drop-shadow-lg"
+      >
+        <img
+          src="/logos/AP Side By Side All White Transparent.svg"
+          alt="Archpoint Labs Logo"
+          className="h-10 w-auto"
+        />
+      </a>
+      <a
+        href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg"
+      >
+        Book a Call
+      </a>
 
         {/** Headline & Subheadline */}
         {!(isMobile && hasMessages) && (
