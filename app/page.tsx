@@ -26,12 +26,22 @@ export default function Chat() {
   const [showLabel, setShowLabel] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [sessionId] = useState(() => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+<<<<<<< Updated upstream
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+||||||| Stash base
+=======
+  const [usedExamples, setUsedExamples] = useState<string[]>([])
+>>>>>>> Stashed changes
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const examples = ["Explain their past work", "I'd like an app", "I'd like a website", "I'd like an automation"]
+  const examples = [
+    "Can you help with AI implementation?",
+    "What makes Archpoint Labs different?",
+    "Tell me about your recent projects",
+    "I'm interested in custom software development"
+  ]
 
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -40,24 +50,23 @@ export default function Chat() {
   }, [messages])
 
   useEffect(() => {
-  const handleLinkClick = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName === 'A') {
-      const anchor = target as HTMLAnchorElement;
-      if (anchor.href.startsWith('http')) {
-        e.preventDefault();
-        window.open(anchor.href, '_blank', 'noopener,noreferrer');
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'A') {
+        const anchor = target as HTMLAnchorElement;
+        if (anchor.href.startsWith('http')) {
+          e.preventDefault();
+          window.open(anchor.href, '_blank', 'noopener,noreferrer');
+        }
       }
-    }
-  };
+    };
 
-  document.addEventListener('click', handleLinkClick);
+    document.addEventListener('click', handleLinkClick);
 
-  // Cleanup
-  return () => {
-    document.removeEventListener('click', handleLinkClick);
-  };
-}, []);
+    return () => {
+      document.removeEventListener('click', handleLinkClick);
+    };
+  }, []);
 
   function useIsMobile(breakpoint = 768) {
     const [isMobile, setIsMobile] = useState(false)
@@ -124,6 +133,13 @@ export default function Chat() {
     if (input.trim() && !isLoading) {
       sendMessage(input)
       setInput("")
+    }
+  }
+
+  const handleExampleClick = (text: string) => {
+    if (!isLoading) {
+      setUsedExamples([...usedExamples, text])
+      sendMessage(text)
     }
   }
 
@@ -307,25 +323,28 @@ export default function Chat() {
           </motion.div>
 
           <motion.ul className="mt-5 flex flex-wrap gap-4 items-center justify-center w-full">
-            {examples.map((t, i) => (
-              <motion.li
-                key={t}
-                initial={false}
-                animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-                transition={{
-                  type: "spring",
-                  bounce: 0.15,
-                  duration: 0.5,
-                  delay: i * 0.3,
-                }}
-                onClick={() => !isLoading && setInput(t)}
-                className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow ${
-                  isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-zinc-100"
-                }`}
-              >
-                {t}
-              </motion.li>
-            ))}
+            {examples
+              .filter(example => !usedExamples.includes(example))
+              .map((t, i) => (
+                <motion.li
+                  key={t}
+                  initial={false}
+                  animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{
+                    type: "spring",
+                    bounce: 0.15,
+                    duration: 0.5,
+                    delay: i * 0.3,
+                  }}
+                  onClick={() => handleExampleClick(t)}
+                  className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow ${
+                    isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-zinc-100"
+                  }`}
+                >
+                  {t}
+                </motion.li>
+              ))}
           </motion.ul>
         </motion.div>
       </div>
