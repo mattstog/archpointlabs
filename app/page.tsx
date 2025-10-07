@@ -25,6 +25,7 @@ export default function Chat() {
   const [arrived, setArrived] = useState(false)
   const [showLabel, setShowLabel] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
+  const [sessionId] = useState(() => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -65,6 +66,7 @@ export default function Chat() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          sessionId,
           messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       })
@@ -185,8 +187,28 @@ export default function Chat() {
                   <div className="flex justify-start text-left">
                     <div className="text-white/90">
                       <div className="font-semibold mb-1">Milo:</div>
-                      <div className="prose prose-inherit max-w-none leading-relaxed">
-                        Thinking...
+                      <div className="prose prose-inherit max-w-none leading-relaxed flex items-center">
+                        <span>Thinking</span>
+                        <span className="inline-flex ml-1">
+                          <motion.span
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
+                          >
+                            .
+                          </motion.span>
+                          <motion.span
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
+                          >
+                            .
+                          </motion.span>
+                          <motion.span
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: 0.6 }}
+                          >
+                            .
+                          </motion.span>
+                        </span>
                       </div>
                     </div>
                   </div>

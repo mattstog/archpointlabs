@@ -19,15 +19,6 @@ type UserInfo = {
   timestamp?: string 
 }
 
-function getClientIp(req: NextRequest): string | null {
-  const fwd =
-    req.headers.get('x-forwarded-for') ??
-    req.headers.get('x-real-ip') ??
-    req.headers.get('cf-connecting-ip') ??
-    req.headers.get('x-vercel-forwarded-for')
-  return fwd ? fwd.split(',')[0].trim() : null
-}
-
 function getSystemPrompt(): string {
   try {
     const promptPath = path.join(process.cwd(), 'prompts', 'system-prompt.md')
@@ -43,9 +34,8 @@ function getSystemPrompt(): string {
   }
 }
 
-async function logConversation(messages: Message[], response: string, userInfo?: UserInfo) {
+async function logConversation(sessionId: string, messages: Message[], response: string, userInfo?: UserInfo) {
   try {
-    const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     await sql`
       INSERT INTO conversations (session_id, ip, user_agent, message_count, messages, ai_response)
       VALUES (
@@ -66,7 +56,8 @@ async function logConversation(messages: Message[], response: string, userInfo?:
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-
+    
+    // Validate request body
     if (!body.messages || !Array.isArray(body.messages)) {
       return NextResponse.json(
         { error: 'Invalid request: messages array required' },
@@ -74,8 +65,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { messages } = body as { messages: Message[] }
+    if (!body.sessionId || typeof body.sessionId !== 'string') {
+      return NextResponse.json(
+        { error: 'Invalid request: sessionId required' },
+        { status: 400 }
+      )
+    }
 
+    const { messages, sessionId } = body as { messages: Message[], sessionId: string }
+    
+    // Validate messages format
     if (messages.some(m => !m.role || !m.content)) {
       return NextResponse.json(
         { error: 'Invalid message format' },
@@ -86,7 +85,7 @@ export async function POST(req: NextRequest) {
     const systemPrompt = getSystemPrompt()
 
     const userInfo: UserInfo = {
-      ip: getClientIp(req), // <- no more req.ip
+      ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
       userAgent: req.headers.get('user-agent'),
       timestamp: new Date().toISOString(),
     }
@@ -127,7 +126,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Log conversation asynchronously (don't await to speed up response)
-    logConversation(messages, aiResponse, userInfo).catch(err => 
+    logConversation(sessionId, messages, aiResponse, userInfo).catch(err => 
       console.error('Failed to log conversation:', err)
     )
 
