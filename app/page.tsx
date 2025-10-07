@@ -287,8 +287,6 @@ export default function Chat() {
                   duration: 0.5,
                   delay: i * 0.3,
                 }}
-                onClick={() => setInput(t)}
-                className="px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow cursor-pointer hover:bg-zinc-100"
                 onClick={() => !isLoading && setInput(t)}
                 className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow ${
                   isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-zinc-100"
