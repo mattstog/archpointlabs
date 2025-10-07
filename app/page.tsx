@@ -26,6 +26,8 @@ export default function Chat() {
   const [showLabel, setShowLabel] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [sessionId] = useState(() => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -111,9 +113,9 @@ export default function Chat() {
 
   return (
     <main className={`${figtree.className} min-h-screen w-full`}>
+      <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
       <div
-        className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left bg-cover bg-center bg-fixed"
-        style={{ backgroundImage: "url('/new-hero-bro.png')" }}
+        className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left"
       >
         <div className="absolute top-6 left-6 drop-shadow-lg flex flex-row items-center space-x-2">
           <img
@@ -126,32 +128,35 @@ export default function Chat() {
         <div className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg">Book a Call</div>
 
         {/** Headline & Subheadline */}
-        <div
-          className="absolute left-24 top-32 text-white drop-shadow-l max-w-xl pointer-events-none z-0 hidden lg:block"
+        {!(isMobile && hasMessages) && (
+          <div
+          className="absolute top-18 lg:top-32 inset-x-0 text-center lg:left-24 lg:text-left text-white drop-shadow-l max-w-xl pointer-events-none z-0"
         >
-          <h1 className="text-6xl font-extrabold leading-tight">
+          <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight">
             Building <br/> What&apos;s Next.
           </h1>
-          <p className="mt-3 text-lg leading-relaxed text-white/90">
+          <p className="mt-3 text-lg sm:px-3 lg:px-0 leading-relaxed text-white/90">
             {SUBHEAD}
           </p>
         </div>
+        )}
 
         {/* travel wrapper */}
         <motion.div
-          className="absolute top-[19%] left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center lg:ml-85 w-full max-w-[672px] px-4"
-          initial={{ y: "-40dvh" }}
-          animate={{ y: 0 }} 
+          key={mounted && isMobile ? "m" : "d"}
+          className="absolute top-0 lg:top-[19%] left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center lg:ml-85 w-full max-w-[672px] px-4"
+          initial={{ y: isMobile ? "120svh" : "-40dvh" }}
+          animate={{ y: isMobile ? "55svh" : 0 }}
           transition={{
-            y: { delay: 1.2, duration: 3.5, ease: "linear" },
-            opacity: { delay: 1.2, duration: 0.4 },
+            y: isMobile ? { delay: 1.2, duration: 3, ease: "linear" } : { delay: 1.5, duration: 2, ease: "linear" },
+            opacity: { delay: 1.5, duration: 0.4 },
           }}
           onAnimationComplete={() => setArrived(true)}
         >
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
-              className="scrollarea mb-8 w-full h-[50vh] sm bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
+              className={`scrollarea mb-8 w-full h-[50vh] sm bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth ${isMobile && hasMessages ? "-mt-72 lg:mt-0" : ""}`}
               ref={scrollContainerRef}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -231,7 +236,7 @@ export default function Chat() {
 
           {/** Orb / Form */}
           <motion.div
-            className="relative z-10 mb-2 rounded-full border border-zinc-300 shadow-xl"
+            className="relative z-10 mb-0 lg:mb-2 rounded-full border border-zinc-300 shadow-xl"
             initial={false}
             animate={arrived ? { width: isMobile ? 380 : 672, height: 64 } : { width: 48, height: 48 }}
             transition={{
