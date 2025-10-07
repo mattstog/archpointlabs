@@ -6,6 +6,9 @@ import { ArrowUp } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Figtree } from "next/font/google"
+import type { Components } from "react-markdown"
+import PortfolioModal from "@/components/portfolio-modal"
+import type { PortfolioItem } from "@/components/portfolio-grid"
 
 const figtree = Figtree({ subsets: ["latin"] })
 
@@ -18,6 +21,31 @@ type Message = {
   content: string
 }
 
+// Portfolio items configuration
+const portfolioItems: PortfolioItem[] = [
+  {
+    id: "1",
+    title: "Classic Team Realty",
+    description: "Modern marketing site for top realty company",
+    posterUrl: "/ctr-hero.png",
+    iframeUrl: "https://classicteamrealty.com",
+  },
+  {
+    id: "2",
+    title: "Mitch Harris",
+    description: "Modern marketing site for MLB player",
+    posterUrl: "/mitch-hero.png",
+    iframeUrl: "https://mitchharris.com",
+  },
+  {
+    id: "3",
+    title: "Fromm Scratch",
+    description: "Modern marketing site for top baking blog",
+    posterUrl: "/fs-hero.png",
+    iframeUrl: "https://frommscratch.com",
+  },
+]
+
 export default function Chat() {
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
@@ -26,10 +54,16 @@ export default function Chat() {
   const [showLabel, setShowLabel] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [sessionId] = useState(() => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
-    const [usedExamples, setUsedExamples] = useState<string[]>([])
-    const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [usedExamples, setUsedExamples] = useState<string[]>([])
+  const [mounted, setMounted] = useState(false)
+  
+  // Portfolio modal state
+  const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
+  const [activeIframe, setActiveIframe] = useState<HTMLIFrameElement | null>(null)
+  const poolRef = useRef<HTMLDivElement>(null)
+  const iframeMapRef = useRef<Map<string, HTMLIFrameElement>>(new Map())
 
+  useEffect(() => setMounted(true), [])
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -46,24 +80,46 @@ export default function Chat() {
     }
   }, [messages])
 
+  // Initialize iframe pool for portfolio items
   useEffect(() => {
-    const handleLinkClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'A') {
-        const anchor = target as HTMLAnchorElement;
-        if (anchor.href.startsWith('http')) {
-          e.preventDefault();
-          window.open(anchor.href, '_blank', 'noopener,noreferrer');
-        }
-      }
-    };
+    if (!poolRef.current) return
 
-    document.addEventListener('click', handleLinkClick);
+    for (const item of portfolioItems) {
+      if (!iframeMapRef.current.has(item.id)) {
+        const el = document.createElement("iframe")
+        el.src = item.iframeUrl
+        el.title = item.title
+        el.setAttribute(
+          "allow",
+          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        )
+        Object.assign(el.style, {
+          position: "absolute",
+          left: "-9999px",
+          top: "0",
+          width: "800px",
+          height: "600px",
+          border: "0",
+          visibility: "hidden",
+        } as CSSStyleDeclaration)
+
+        const handleLoad = () => {
+          el.dataset.loaded = "true"
+        }
+        el.addEventListener("load", handleLoad)
+
+        poolRef.current.appendChild(el)
+        iframeMapRef.current.set(item.id, el)
+      }
+    }
 
     return () => {
-      document.removeEventListener('click', handleLinkClick);
-    };
-  }, []);
+      iframeMapRef.current.forEach((el) => {
+        el.remove()
+      })
+      iframeMapRef.current.clear()
+    }
+  }, [])
 
   function useIsMobile(breakpoint = 768) {
     const [isMobile, setIsMobile] = useState(false)
@@ -140,19 +196,88 @@ export default function Chat() {
     }
   }
 
+  // Handle portfolio link clicks
+  const handlePortfolioClick = (url: string) => {
+    const item = portfolioItems.find(p => p.iframeUrl === url)
+    if (item) {
+      const el = iframeMapRef.current.get(item.id) || null
+      setActiveIframe(el)
+      setSelectedItem(item)
+    }
+  }
+
+  // Return iframe to pool when modal closes
+  const returnIframeToPool = () => {
+    if (activeIframe && poolRef.current) {
+      poolRef.current.appendChild(activeIframe)
+      Object.assign(activeIframe.style, {
+        position: "absolute",
+        left: "-9999px",
+        top: "0",
+        width: "800px",
+        height: "600px",
+        border: "0",
+        visibility: "hidden",
+      } as CSSStyleDeclaration)
+    }
+    setActiveIframe(null)
+    setSelectedItem(null)
+  }
+
+  // Custom markdown components for portfolio links
+  const markdownComponents: Components = {
+    a: ({ node, href, children }) => {
+      // Check if this is a portfolio URL
+      const isPortfolioLink = portfolioItems.some(item => item.iframeUrl === href)
+      
+      if (isPortfolioLink && href) {
+        return (
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              handlePortfolioClick(href)
+            }}
+            className="text-blue-300 hover:text-blue-100 underline cursor-pointer bg-transparent border-none p-0 font-inherit"
+          >
+            {children}
+          </button>
+        )
+      }
+      
+      // Regular external link
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-300 hover:text-blue-100 underline"
+        >
+          {children}
+        </a>
+      )
+    }
+  }
+
   const hasMessages = messages.length > 0
 
   const isMobile = useIsMobile()
 
   return (
     <main className={`${figtree.className} min-h-screen w-full`}>
+      {/* Hidden iframe pool */}
+      <div
+        ref={poolRef}
+        aria-hidden="true"
+        style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
+      />
+
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
       <div
         className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left"
       >
       <a
         href="https://archpointlabs.com"
-        className="absolute top-6 left-6 drop-shadow-lg"
+        className="absolute top-6 left-6 drop-shadow-lg z-50"
       >
         <img
           src="/logos/AP Side By Side All White Transparent.svg"
@@ -164,7 +289,7 @@ export default function Chat() {
         href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg"
+        className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg z-50"
       >
         Book a Call
       </a>
@@ -224,7 +349,12 @@ export default function Chat() {
                           </div>
                         )}
                         <div className="prose prose-inherit max-w-none leading-relaxed">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            components={markdownComponents}
+                          >
+                            {m.content}
+                          </ReactMarkdown>
                         </div>
                       </div>
                     </div>
@@ -348,6 +478,13 @@ export default function Chat() {
           </motion.ul>
         </motion.div>
       </div>
+
+      {/* Portfolio Modal */}
+      <PortfolioModal
+        item={selectedItem}
+        iframeEl={activeIframe}
+        onClose={returnIframeToPool}
+      />
     </main>
   )
 }
