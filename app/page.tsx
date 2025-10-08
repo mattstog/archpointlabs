@@ -617,11 +617,23 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
               .map((t, i) => (
                 <motion.li
                   key={t}
-                  /* ...existing animation props... */
-                  onClick={() => canChat && handleExampleClick(t)}
+                  initial={false}
+                  animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{
+                    type: "spring",
+                    bounce: 0.15,
+                    duration: 0.5,
+                    delay: i * 0.3,
+                  }}
+                  onClick={() => {
+                    if (!isLoading && canChat) handleExampleClick(t)
+                  }}
                   className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow text-black ${
-                    isLoading || !canChat
+                    !canChat
                       ? "cursor-not-allowed opacity-50"
+                      : isLoading
+                      ? "cursor-wait opacity-70"
                       : "cursor-pointer hover:bg-zinc-100"
                   }`}
                   title={!canChat ? "Chat limit reached for this session" : undefined}
