@@ -1,67 +1,142 @@
-import { openai } from '@ai-sdk/openai';
-import { streamText, UIMessage, convertToModelMessages } from 'ai';
+// app/api/chat/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import fs from 'node:fs'
+import path from 'node:path'
+import { neon } from '@neondatabase/serverless'
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+export const runtime = 'nodejs'
 
-export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
+const sql = neon(process.env.POSTGRES_URL!)
 
-  const result = streamText({
-    model: openai('gpt-5-mini'),
-    messages: convertToModelMessages(messages),
-    system: `You are a portfolio chatbot named Milo working for Aidan Kane, a website and app developer with over two years of experience. Your role is to introduce Aidan to potential clients, answer questions about his services, and help visitors understand how he works.
--------------
-About Aidan:
+type Message = {
+  role: 'user' | 'assistant' | 'system'
+  content: string
+}
 
-Aidan is a fast, execution-driven developer who makes significant progress in days, not weeks.
+type UserInfo = { 
+  ip?: string | null
+  userAgent?: string | null
+  timestamp?: string 
+}
 
-He’s a great storyteller who prioritizes understanding the client deeply before writing a single line of code.
+function getSystemPrompt(): string {
+  try {
+    const promptPath = path.join(process.cwd(), 'prompts', 'system-prompt.md')
+    const promptContent = fs.readFileSync(promptPath, 'utf8')
+    const lines = promptContent.split('\n')
+    const contentStart = lines.findIndex(line => line.startsWith('You are the AI'))
+    return lines.slice(contentStart).join('\n').replace(/#+\s*/g, '').replace(/\*\*/g, '')
+  } catch (error) {
+    console.warn('Could not load system prompt file, using default:', error)
+    return `You are Milo, an AI consultant for Archpoint Labs, a cutting-edge consulting firm specializing in AI transformation. 
+    You help businesses understand how AI can solve their challenges through strategy, implementation, automation, and training. 
+    Be professional, helpful, and solution-oriented while guiding potential clients toward deeper engagement with our services.`
+  }
+}
 
-He combines creativity and technology to build products with the same balance of artistry and technical precision seen in Pixar or Studio Ghibli films.
+async function logConversation(sessionId: string, messages: Message[], response: string, userInfo?: UserInfo) {
+  try {
+    await sql`
+      INSERT INTO conversations (session_id, ip, user_agent, message_count, messages, ai_response)
+      VALUES (
+        ${sessionId},
+        ${userInfo?.ip ?? 'unknown'},
+        ${userInfo?.userAgent ?? 'unknown'},
+        ${messages.length},
+        ${JSON.stringify(messages)}::jsonb,
+        ${response}
+      )
+    `
+    console.log(`💬 Conversation logged to Neon: ${sessionId}`)
+  } catch (err) {
+    console.error('Error logging conversation:', err)
+  }
+}
 
--------------
-Services:
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    
+    // Validate request body
+    if (!body.messages || !Array.isArray(body.messages)) {
+      return NextResponse.json(
+        { error: 'Invalid request: messages array required' },
+        { status: 400 }
+      )
+    }
 
-Aidan designs and builds websites and apps.
+    if (!body.sessionId || typeof body.sessionId !== 'string') {
+      return NextResponse.json(
+        { error: 'Invalid request: sessionId required' },
+        { status: 400 }
+      )
+    }
 
-His work is modern, intuitive, and tailored to the client’s needs.
+    const { messages, sessionId } = body as { messages: Message[], sessionId: string }
+    
+    // Validate messages format
+    if (messages.some(m => !m.role || !m.content)) {
+      return NextResponse.json(
+        { error: 'Invalid message format' },
+        { status: 400 }
+      )
+    }
 
-He can handle a wide range: professional websites for lawyers, creative blogs, SaaS startup landing pages, or full-stack mobile apps.
--------------
-Portfolio:
+    const systemPrompt = getSystemPrompt()
 
-Direct visitors to [portfolio-website-url/the-proof] for examples of past work.
+    const userInfo: UserInfo = {
+      ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+      userAgent: req.headers.get('user-agent'),
+      timestamp: new Date().toISOString(),
+    }
 
--------------
-Process:
+    // OpenAI API call
+    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'system', content: systemPrompt }, ...messages],
+        max_tokens: 1000,
+        temperature: 0.7,
+      }),
+    })
 
-Aidan sets a contract before starting, establishing timelines and communication expectations upfront.
+    if (!openaiRes.ok) {
+      const errorData = await openaiRes.json().catch(() => ({}))
+      console.error('OpenAI API error:', errorData)
+      return NextResponse.json(
+        { error: 'AI service temporarily unavailable' },
+        { status: 503 }
+      )
+    }
 
--------------
-Pricing:
+    const data = await openaiRes.json()
+    const aiResponse = data?.choices?.[0]?.message?.content ?? ''
 
-Payment is structured: half upfront (ensures buy-in) and half upon completion (ensures satisfaction).
+    if (!aiResponse) {
+      console.error('Empty response from OpenAI')
+      return NextResponse.json(
+        { error: 'Failed to generate response' },
+        { status: 500 }
+      )
+    }
 
-Website prices range from $500-$5000 and mobile apps range from $2000-$15000 depending on complexity. These are estimates though, so direct the user to book a call for more accurate pricing.
+    // Log conversation asynchronously (don't await to speed up response)
+    logConversation(sessionId, messages, aiResponse, userInfo).catch(err => 
+      console.error('Failed to log conversation:', err)
+    )
 
--------------
-Tone & How to Respond:
-
-Speak casually and professionally. Remember that you work for Aidan, and you ultimately are here to find details out about prospective clients and direct them to book a call.
-
-Be curious about the visitor’s business and occasionally ask light follow-up questions to show interest.
-
-Always remain approachable, clear, and informative.
-
-DO NOT get overly technical -- you should not disclose the technology required to build their required product.
-
-DO NOT offer to build anything for the client -- be comfortable refusing if they ask. After a few messages, once it seems the user is interested, direct the user to book a call with Aidan to discuss details.
-
-MOST IMPORTANTLY: Respond very concisely, in 1-2 sentences, only speaking about what's relevant to the user's question. Only say what is absolutely necessary, and then take part of it out.`
-  });
-
-  console.log(messages);
-
-  return result.toUIMessageStreamResponse();
+    return NextResponse.json({ message: aiResponse })
+    
+  } catch (error) {
+    console.error('Chat API error:', error)
+    return NextResponse.json(
+      { error: 'Failed to process request' },
+      { status: 500 }
+    )
+  }
 }

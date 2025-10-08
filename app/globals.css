@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: linear-gradient(to bottom, #4a87d5, #6ea7e6);
   --foreground: #171717;
 }
 
@@ -19,7 +19,25 @@
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+html, body {
+  min-height: 100%;
+  background-color: #3f80d0; /* fallback for bars */
+  background-image: linear-gradient(to bottom, #4a87d5, #6ea7e6);
+  background-attachment: scroll; /* avoid iOS white flash */
+}
+
+.scrollarea {
+  scrollbar-width: thin;                        /* Firefox */
+  scrollbar-color: rgba(0,0,0,0.6) transparent; /* black pill on no track */
+}
+
+.scrollarea::-webkit-scrollbar {
+  width: 8px;                                   /* thin */
+}
+.scrollarea::-webkit-scrollbar-track {
+  background: transparent;                      /* removes white track */
+}
+.scrollarea::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.6);                  /* black pill */
+  border-radius: 9999px;                        /* fully rounded */
 }
