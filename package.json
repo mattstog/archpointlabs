@@ -22,6 +22,7 @@
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "vercel": "^41.0.2",
     "zod": "^4.1.5"
   },
   "devDependencies": {
