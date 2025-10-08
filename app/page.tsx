@@ -78,7 +78,7 @@ export default function Chat() {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
     }
-  }, [messages])
+  }, [messages, isLoading])
 
   // Initialize iframe pool for portfolio items
   useEffect(() => {
@@ -144,6 +144,13 @@ export default function Chat() {
     const newMessages = [...messages, userMessage]
     setMessages(newMessages)
     setIsLoading(true)
+
+    // Add this setTimeout to scroll after state updates
+    setTimeout(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
+      }
+    }, 0)
 
     try {
       const response = await fetch("/api/chat", {
@@ -226,6 +233,7 @@ export default function Chat() {
 
   // Custom markdown components for portfolio links
   const markdownComponents: Components = {
+    p: ({ children }) => <p className="mb-2">{children}</p>,
     a: ({ node, href, children }) => {
       // Check if this is a portfolio URL
       const isPortfolioLink = portfolioItems.some(item => item.iframeUrl === href)
@@ -323,7 +331,7 @@ export default function Chat() {
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
-              className={`scrollarea mb-8 w-full h-[50vh] sm bg-gray-900/20 backdrop-blur-md border border-white/40 rounded-2xl p-6 overflow-y-auto scroll-smooth ${isMobile && hasMessages ? "-mt-72 lg:mt-0" : ""}`}              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              className={`scrollarea mb-8 w-full h-[50vh] sm bg-gray-900/25 backdrop-blur-md border border-white/40 rounded-2xl p-6 overflow-y-auto scroll-smooth ${isMobile && hasMessages ? "-mt-72 lg:mt-0" : ""}`}              initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
             >
