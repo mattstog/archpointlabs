@@ -53,6 +53,10 @@ export default function Chat() {
   // for conversation
   const [messages, setMessages] = useState<Message[]>([])
   const userMessageCount = messages.filter(m => m.role === "user").length
+  // --- chat limit config ---
+  const CHAT_LIMIT = 50; 
+  const remainingTurns = Math.max(0, CHAT_LIMIT - userMessageCount);
+  const canChat = remainingTurns > 0;
 
   const [isLoading, setIsLoading] = useState(false)
   const [arrived, setArrived] = useState(false)
@@ -266,6 +270,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
   }
 
   const sendMessage = async (text: string) => {
+    if (!canChat) return; // hard stop if limit reached
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -317,6 +322,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
+    if (!canChat) return; // stop if at limit
     if (input.trim() && !isLoading) {
       sendMessage(input)
       setInput("")
@@ -324,11 +330,11 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
   }
 
   const handleExampleClick = (text: string) => {
-    if (!isLoading) {
-      setUsedExamples([...usedExamples, text])
-      sendMessage(text)
+  if (!isLoading && canChat) {
+      setUsedExamples([...usedExamples, text]);
+      sendMessage(text);
     }
-  }
+  };
 
   // Handle portfolio link clicks
   const handlePortfolioClick = (url: string) => {
@@ -593,11 +599,21 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
                       arrived ? "" : "pointer-events-none"
                     }`}
                     value={input}
-                    placeholder={arrived ? "Ask away..." : ""}
+                    placeholder={
+                      arrived
+                        ? (
+                            canChat
+                              ? remainingTurns <= 3
+                                ? `Ask away... (${remainingTurns} left)`
+                                : "Ask away..."
+                              : "Chat limit reached for this session"
+                          )
+                        : ""
+                    }
                     onChange={(e) => setInput(e.currentTarget.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || !canChat}
                   />
-                  {input && arrived && !isLoading && (
+                  {input && arrived && !isLoading && canChat && (
                     <button
                       type="button"
                       onClick={handleSubmit}
@@ -626,6 +642,38 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
                     duration: 0.5,
                     delay: i * 0.3,
                   }}
+                  onClick={() => {
+                    if (!isLoading && canChat) handleExampleClick(t)
+                  }}
+                  className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow text-black ${
+                    !canChat
+                      ? "cursor-not-allowed opacity-50"
+                      : isLoading
+                      ? "cursor-wait opacity-70"
+                      : "cursor-pointer hover:bg-zinc-100"
+                  }`}
+                  title={!canChat ? "Chat limit reached for this session" : undefined}
+                >
+                  {t}
+                </motion.li>
+              ))}
+          </motion.ul>
+
+          {/* <motion.ul className="mt-5 flex flex-wrap gap-4 items-center justify-center w-full text-black">
+            {examplesToUse
+              .filter(example => !usedExamples.includes(example))
+              .map((t, i) => (
+                <motion.li
+                  key={t}
+                  initial={false}
+                  animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{
+                    type: "spring",
+                    bounce: 0.15,
+                    duration: 0.5,
+                    delay: i * 0.3,
+                  }}
                   onClick={() => handleExampleClick(t)}
                   className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow text-black ${
                     isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-zinc-100"
@@ -634,7 +682,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
                   {t}
                 </motion.li>
               ))}
-          </motion.ul>
+          </motion.ul> */}
         </motion.div>
       </div>
 
