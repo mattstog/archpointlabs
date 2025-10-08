@@ -74,6 +74,11 @@ export default function Chat() {
     "I'm interested in custom software development"
   ]
 
+  const examplesForMobile = [
+    "What makes Archpoint Labs different?",
+    "I'm interested in custom software development"
+  ]
+
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
@@ -270,6 +275,8 @@ export default function Chat() {
 
   const isMobile = useIsMobile()
 
+  const examplesToUse = isMobile ? examplesForMobile : examples;
+
   return (
     <main className={`${figtree.className} min-h-screen w-full`}>
       {/* Hidden iframe pool */}
@@ -283,24 +290,24 @@ export default function Chat() {
       <div
         className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left"
       >
-      <a
-        href="https://archpointlabs.com"
-        className="absolute top-6 left-6 drop-shadow-lg z-50"
-      >
-        <img
-          src="/logos/AP Side By Side All White Transparent.svg"
-          alt="Archpoint Labs Logo"
-          className="h-10 w-auto"
-        />
-      </a>
-      <a
-        href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg z-50"
-      >
-        Book a Call
-      </a>
+        <a
+          href="https://archpointlabs.com"
+          className="absolute top-6 left-6 drop-shadow-lg z-50"
+        >
+          <img
+            src="/logos/aidans-try-for-mobile-logo.svg"
+            alt="Archpoint Labs Logo"
+            className="h-10 w-auto"
+          />
+        </a>
+        <a
+          href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg"
+        >
+          Book a Call
+        </a>
 
         {/** Headline & Subheadline */}
         {!(isMobile && hasMessages) && (
@@ -459,7 +466,7 @@ export default function Chat() {
           </motion.div>
 
           <motion.ul className="mt-5 flex flex-wrap gap-4 items-center justify-center w-full">
-            {examples
+            {examplesToUse
               .filter(example => !usedExamples.includes(example))
               .map((t, i) => (
                 <motion.li
