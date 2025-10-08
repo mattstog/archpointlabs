@@ -9,6 +9,7 @@ import { Figtree } from "next/font/google"
 import type { Components } from "react-markdown"
 import PortfolioModal from "@/components/portfolio-modal"
 import type { PortfolioItem } from "@/components/portfolio-grid"
+import { ExternalLink } from "lucide-react"
 
 const figtree = Figtree({ subsets: ["latin"] })
 
@@ -359,31 +360,41 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
   // Custom markdown components for portfolio links
   const markdownComponents: Components = {
-  p: ({ children }) => <p className="m-0 inline">{children}</p>,
-  a: ({ node, href, children }) => {
-    const isPortfolioLink = portfolioItems.some(item => item.iframeUrl === href)
-    if (isPortfolioLink && href) {
+    p: ({ children }) => <p className="m-0 inline">{children}</p>,
+    a: ({ href, children }) => {
+      const isPortfolioLink = href && portfolioItems.some(i => i.iframeUrl === href)
+
+      const base =
+        "chat-link inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 " +
+        "underline underline-offset-2 decoration-2 " +
+        "bg-white/10 text-white hover:bg-white/20 " +
+        "transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+
+      if (isPortfolioLink && href) {
+        return (
+          <button
+            onClick={(e) => { e.preventDefault(); handlePortfolioClick(href) }}
+            className={base + " cursor-pointer"}
+          >
+            {children}
+            <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+          </button>
+        )
+      }
+
       return (
-        <button
-          onClick={(e) => { e.preventDefault(); handlePortfolioClick(href) }}
-          className="text-blue-700 hover:text-blue-900 underline cursor-pointer bg-transparent border-none p-0 font-inherit"
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={base}
         >
           {children}
-        </button>
+          <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+        </a>
       )
-    }
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-700 hover:text-blue-900 underline"
-      >
-        {children}
-      </a>
-    )
+    },
   }
-}
 
   const hasMessages = messages.length > 0
 
@@ -617,6 +628,13 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
         iframeEl={activeIframe}
         onClose={returnIframeToPool}
       />
+      <style jsx global>{`
+        .scrollarea .chat-link:visited { color: #fff; }
+        .scrollarea .chat-link svg {
+          display: inline-block;
+          vertical-align: middle;
+        }
+      `}</style>
     </main>
   )
 }
