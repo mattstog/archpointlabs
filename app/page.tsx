@@ -151,6 +151,23 @@ export default function Chat() {
 
   const examplesToUse = isMobile ? examplesForMobile : examples;
 
+  const MOBILE_SCROLL_BY_PX = 360 // <— tweak this amount as you like
+  const didMobileScrollRef = useRef(false)
+
+  // If you prefer to mirror the naming from your prompt:
+  const isMessages = hasMessages
+
+  useEffect(() => {
+    if (!mounted) return
+    if (isMobile && isMessages && !didMobileScrollRef.current) {
+      didMobileScrollRef.current = true
+      // small delay to ensure layout is stable before scrolling
+      window.requestAnimationFrame(() => {
+        window.scrollBy({ top: MOBILE_SCROLL_BY_PX, behavior: "smooth" })
+      })
+    }
+  }, [mounted, isMobile, isMessages])
+
   return (
     <main className={`${figtree.className} min-h-screen w-full`}>
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
@@ -174,8 +191,7 @@ export default function Chat() {
         </a>
 
         {/** Headline & Subheadline */}
-        {!(isMobile && hasMessages) && (
-          <div
+        <div
           className="absolute top-18 lg:top-32 inset-x-0 text-center lg:left-24 lg:text-left text-white drop-shadow-l max-w-xl pointer-events-none z-0"
         >
           <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight">
@@ -185,12 +201,11 @@ export default function Chat() {
             {SUBHEAD}
           </p>
         </div>
-        )}
 
         {/* travel wrapper */}
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
-          className="absolute top-0 lg:top-[19%] left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center lg:ml-85 w-full max-w-[672px] px-4"
+          className={`absolute top-0 lg:top-[19%] left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center lg:ml-85 w-full max-w-[672px] px-4 ${(isMobile && hasMessages) ? "py-4" : ""}`}
           initial={{ y: isMobile ? "120svh" : "-40dvh" }}
           animate={{ y: isMobile ? "55svh" : 0 }}
           transition={{
@@ -202,7 +217,7 @@ export default function Chat() {
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
-              className={`scrollarea mb-8 w-full h-[50vh] sm bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth ${isMobile && hasMessages ? "-mt-64 lg:mt-0" : ""}`}
+              className="scrollarea mb-8 w-full h-[50vh] sm bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
               ref={scrollContainerRef}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
