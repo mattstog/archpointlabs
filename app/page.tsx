@@ -421,7 +421,7 @@ export default function Chat() {
 
           {/** Orb / Form */}
           <motion.div
-            className="relative z-10 mb-0 lg:mb-2 rounded-full border border-zinc-300 shadow-xl"
+            className="relative z-10 mb-0 lg:mb-2 rounded-full border border-zinc-300 shadow-xl text-black"
             initial={false}
             animate={arrived ? { width: isMobile ? 380 : 672, height: 64 } : { width: 48, height: 48 }}
             transition={{
@@ -434,7 +434,7 @@ export default function Chat() {
             }}
           >
             <div className="relative h-full w-full">
-              <div className="absolute inset-0 rounded-full bg-white z-0">
+              <div className="absolute inset-0 rounded-full bg-white z-0 text-black">
                 <motion.form
                   key="form"
                   className="absolute inset-0 z-10"
@@ -443,7 +443,7 @@ export default function Chat() {
                   onSubmit={handleSubmit}
                 >
                   <input
-                    className={`h-full w-full rounded-full px-4 bg-transparent pr-20 focus:outline-none focus:ring-0 ${
+                    className={`h-full w-full rounded-full px-4 bg-transparent pr-20 focus:outline-none focus:ring-0 text-black ${
                       arrived ? "" : "pointer-events-none"
                     }`}
                     value={input}
@@ -465,7 +465,7 @@ export default function Chat() {
             </div>
           </motion.div>
 
-          <motion.ul className="mt-5 flex flex-wrap gap-4 items-center justify-center w-full">
+          <motion.ul className="mt-5 flex flex-wrap gap-4 items-center justify-center w-full text-black">
             {examplesToUse
               .filter(example => !usedExamples.includes(example))
               .map((t, i) => (
@@ -481,7 +481,7 @@ export default function Chat() {
                     delay: i * 0.3,
                   }}
                   onClick={() => handleExampleClick(t)}
-                  className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow ${
+                  className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow text-black ${
                     isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-zinc-100"
                   }`}
                 >
