@@ -48,7 +48,11 @@ const portfolioItems: PortfolioItem[] = [
 
 export default function Chat() {
   const [input, setInput] = useState("")
+  
+  // for conversation
   const [messages, setMessages] = useState<Message[]>([])
+  const userMessageCount = messages.filter(m => m.role === "user").length
+
   const [isLoading, setIsLoading] = useState(false)
   const [arrived, setArrived] = useState(false)
   const [showLabel, setShowLabel] = useState(false)
@@ -66,6 +70,7 @@ export default function Chat() {
   useEffect(() => setMounted(true), [])
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   const examples = [
     "Can you help with AI implementation?",
@@ -79,11 +84,131 @@ export default function Chat() {
     "I'm interested in custom software development"
   ]
 
+  function scrollToBottom(el: HTMLElement, behavior: ScrollBehavior = "auto") {
+  el.scrollTo({ top: el.scrollHeight, behavior })
+}
+
+type AutoScrollMode = "bottom" | "anchor"
+
+function useAutoScroll(
+  ref: React.RefObject<HTMLDivElement | null>,
+  deps: any[],
+  opts?: {
+    mode?: AutoScrollMode
+    anchorEl?: () => HTMLElement | null // when mode === "anchor"
+    pad?: number // px from top when anchored
+  }
+) {
+  const mode = opts?.mode ?? "bottom"
+  const pad = opts?.pad ?? 8
+
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const [hasQueuedNew, setHasQueuedNew] = useState(false)
+
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
+    const el = ref.current
+    if (!el) return
+    const THRESHOLD = 32
+
+    const onScroll = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+      const atBottom = distanceFromBottom <= THRESHOLD
+      setIsAtBottom(atBottom)
+      if (atBottom) setHasQueuedNew(false)
     }
-  }, [messages, isLoading])
+
+    el.addEventListener("scroll", onScroll, { passive: true })
+    onScroll()
+
+    // Keep alignment on layout changes
+    const ro = new ResizeObserver(() => {
+      if (!ref.current) return
+      const el = ref.current
+
+      if (mode === "bottom") {
+        if (isAtBottom) el.scrollTo({ top: el.scrollHeight })
+      } else if (mode === "anchor" && opts?.anchorEl) {
+        const anchor = opts.anchorEl()
+        if (!anchor) return
+        // Keep anchor at `pad` px from top of container
+        const topNow =
+          anchor.getBoundingClientRect().top - el.getBoundingClientRect().top
+        const delta = topNow - pad
+        if (delta !== 0) el.scrollTop += delta
+      }
+    })
+    ro.observe(el)
+
+    return () => {
+      el.removeEventListener("scroll", onScroll)
+      ro.disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref, mode, pad])
+
+  // On deps change (new message / loading tick)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    if (mode === "bottom") {
+      if (isAtBottom) {
+        el.scrollTo({ top: el.scrollHeight })
+      } else {
+        setHasQueuedNew(true)
+      }
+    } else if (mode === "anchor" && opts?.anchorEl) {
+      const anchor = opts.anchorEl()
+      if (!anchor) return
+      // Wait a frame for paint, then lock anchor to top with padding
+      requestAnimationFrame(() => {
+        if (!ref.current) return
+        const el2 = ref.current
+        const topNow =
+          anchor.getBoundingClientRect().top - el2.getBoundingClientRect().top
+        const delta = topNow - pad
+        if (delta !== 0) el2.scrollTop += delta
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps.concat([mode, pad]))
+
+  const jumpToBottom = (smooth = true) => {
+    const el = ref.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" })
+    setHasQueuedNew(false)
+  }
+
+  return { isAtBottom, hasQueuedNew, jumpToBottom }
+}
+
+  // useEffect(() => {
+  //   if (scrollContainerRef.current) {
+  //     scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
+  //   }
+  // }, [messages, isLoading])
+
+  // figure out last msg + previous user msg
+const last = messages[messages.length - 1]
+let prevUserId: string | null = null
+for (let i = messages.length - 2; i >= 0; i--) {
+  if (messages[i].role === "user") { prevUserId = messages[i].id; break }
+}
+
+const mode: "bottom" | "anchor" =
+  last?.role === "assistant" ? "anchor" : "bottom"
+
+const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
+  scrollContainerRef,
+  // trigger on any new message and loading state
+  [messages.length, isLoading],
+  {
+    mode,
+    pad: 8, // vertical padding from top when anchored
+    anchorEl: () => (prevUserId ? messageRefs.current.get(prevUserId) ?? null : null),
+  }
+)
 
   // Initialize iframe pool for portfolio items
   useEffect(() => {
@@ -148,14 +273,10 @@ export default function Chat() {
 
     const newMessages = [...messages, userMessage]
     setMessages(newMessages)
+    requestAnimationFrame(() => {
+      jumpToBottom(true)
+    })
     setIsLoading(true)
-
-    // Add this setTimeout to scroll after state updates
-    setTimeout(() => {
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
-      }
-    }, 0)
 
     try {
       const response = await fetch("/api/chat", {
@@ -238,38 +359,31 @@ export default function Chat() {
 
   // Custom markdown components for portfolio links
   const markdownComponents: Components = {
-    p: ({ children }) => <p className="mb-2">{children}</p>,
-    a: ({ node, href, children }) => {
-      // Check if this is a portfolio URL
-      const isPortfolioLink = portfolioItems.some(item => item.iframeUrl === href)
-      
-      if (isPortfolioLink && href) {
-        return (
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              handlePortfolioClick(href)
-            }}
-            className="text-blue-700 hover:text-blue-900 underline cursor-pointer bg-transparent border-none p-0 font-inherit"
-          >
-            {children}
-          </button>
-        )
-      }
-      
-      // Regular external link
+  p: ({ children }) => <p className="m-0 inline">{children}</p>,
+  a: ({ node, href, children }) => {
+    const isPortfolioLink = portfolioItems.some(item => item.iframeUrl === href)
+    if (isPortfolioLink && href) {
       return (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-700 hover:text-blue-900 underline"
+        <button
+          onClick={(e) => { e.preventDefault(); handlePortfolioClick(href) }}
+          className="text-blue-700 hover:text-blue-900 underline cursor-pointer bg-transparent border-none p-0 font-inherit"
         >
           {children}
-        </a>
+        </button>
       )
     }
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-700 hover:text-blue-900 underline"
+      >
+        {children}
+      </a>
+    )
   }
+}
 
   const hasMessages = messages.length > 0
 
@@ -338,6 +452,7 @@ export default function Chat() {
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
+              ref={scrollContainerRef}
               className={`scrollarea mb-8 w-full h-[50vh] sm bg-gray-900/25 backdrop-blur-md border border-white/40 rounded-2xl p-6 overflow-y-auto scroll-smooth ${isMobile && hasMessages ? "-mt-72 lg:mt-0" : ""}`}              initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
@@ -345,28 +460,32 @@ export default function Chat() {
               <div className="space-y-4">
                 {messages.map((m) => {
                   const isUser = m.role === "user"
+                  const content = isUser ? m.content : m.content.replace(/\n{2,}/g, "\n")
                   
                   return (
                     <div
                       key={m.id}
+                      ref={(el) => {
+                        if (el) messageRefs.current.set(m.id, el)
+                        else messageRefs.current.delete(m.id)
+                      }}
                       className={`flex ${isUser ? "justify-end text-left" : "justify-start text-left"}`}
                     >
                       <div
                         className={`${
-                          isUser ? "mr-4 bg-blue-500 px-4 py-2 rounded-full flex items-center text-white" : "text-white"
+                          isUser
+                            // USER: keep centered pill
+                            ? "mr-4 bg-blue-500 text-white rounded-2xl px-4 py-2 inline-flex items-center justify-center text-left whitespace-pre-wrap break-words max-w-[75%]"
+                            // ASSISTANT: stack label + content vertically
+                            : "ml-0 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left whitespace-pre-wrap break-words max-w-[75%] bg-white/0"
                         }`}
                       >
                         {!isUser && (
-                          <div className="font-semibold mb-1 text-white">
-                            Milo:
-                          </div>
+                          <div className="font-semibold">Milo:</div>
                         )}
-                        <div className="prose prose-inherit max-w-none leading-relaxed">
-                          <ReactMarkdown 
-                            remarkPlugins={[remarkGfm]}
-                            components={markdownComponents}
-                          >
-                            {m.content}
+                        <div className="leading-relaxed w-full">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                            {content}
                           </ReactMarkdown>
                         </div>
                       </div>
@@ -375,9 +494,9 @@ export default function Chat() {
                 })}
                 {isLoading && (
                   <div className="flex justify-start text-left">
-                    <div className="text-white/90">
-                      <div className="font-semibold mb-1">Milo:</div>
-                      <div className="prose prose-inherit max-w-none leading-relaxed flex items-center">
+                    <div className="ml-0 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left whitespace-pre-wrap break-words max-w-[75%] bg-white/0">
+                      <div className="font-semibold">Milo:</div>
+                      <div className="leading-relaxed w-full flex items-center">
                         <span>Thinking</span>
                         <span className="inline-flex ml-1">
                           <motion.span
