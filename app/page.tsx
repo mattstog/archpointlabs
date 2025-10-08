@@ -40,6 +40,11 @@ export default function Chat() {
     "I'm interested in custom software development"
   ]
 
+  const examplesForMobile = [
+    "What makes Archpoint Labs different?",
+    "I'm interested in custom software development"
+  ]
+
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
@@ -144,6 +149,8 @@ export default function Chat() {
 
   const isMobile = useIsMobile()
 
+  const examplesToUse = isMobile ? examplesForMobile : examples;
+
   return (
     <main className={`${figtree.className} min-h-screen w-full`}>
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
@@ -152,7 +159,7 @@ export default function Chat() {
       >
         <div className="absolute top-6 left-6 drop-shadow-lg">
           <img
-            src="/logos/AP Side By Side All White Transparent.svg"
+            src="/logos/aidans-try-for-mobile-logo.svg"
             alt="Archpoint Labs Logo"
             className="h-10 w-auto"
           />
@@ -195,7 +202,7 @@ export default function Chat() {
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
-              className={`scrollarea mb-8 w-full h-[50vh] sm bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth ${isMobile && hasMessages ? "-mt-72 lg:mt-0" : ""}`}
+              className={`scrollarea mb-8 w-full h-[50vh] sm bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth ${isMobile && hasMessages ? "-mt-64 lg:mt-0" : ""}`}
               ref={scrollContainerRef}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -212,7 +219,7 @@ export default function Chat() {
                     >
                       <div
                         className={`text-white/90 ${
-                          isUser ? "mr-4 bg-blue-500 px-4 py-2 rounded-full flex items-center" : ""
+                          isUser ? "mr-4 bg-blue-500 py-2 px-4 rounded-full inline-block w-fit max-w-[80%] whitespace-pre-wrap break-words" : ""
                         }`}
                       >
                         {!isUser && (
@@ -320,7 +327,7 @@ export default function Chat() {
           </motion.div>
 
           <motion.ul className="mt-5 flex flex-wrap gap-4 items-center justify-center w-full">
-            {examples
+            {examplesToUse
               .filter(example => !usedExamples.includes(example))
               .map((t, i) => (
                 <motion.li
