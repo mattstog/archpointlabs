@@ -93,7 +93,7 @@ type AutoScrollMode = "bottom" | "anchor"
 
 function useAutoScroll(
   ref: React.RefObject<HTMLDivElement | null>,
-  deps: any[],
+  deps: unknown[],
   opts?: {
     mode?: AutoScrollMode
     anchorEl?: () => HTMLElement | null // when mode === "anchor"
