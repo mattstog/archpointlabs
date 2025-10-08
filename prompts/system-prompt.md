@@ -246,6 +246,23 @@ Since early 2025, Matt has been successfully delivering custom software solution
 **Active Project:**
 - **CDM Education**: Ongoing software development for School Psychologists, featuring complete process automation that saves significant time per student
 
+**Recent Website Projects:**
+When users ask to see examples of recent work or website design, share these live examples:
+
+1. **Classic Team Realty** - Modern marketing site for a top realty company
+   - Click to preview: https://classicteamrealty.com
+   - Showcases clean design and user-friendly navigation for real estate services
+
+2. **Mitch Harris** - Modern marketing site for MLB player
+   - Click to preview: https://mitchharris.com
+   - Demonstrates our ability to create compelling personal brand websites
+
+3. **Fromm Scratch** - Modern marketing site for a top baking blog
+   - Click to preview: https://frommscratch.com
+   - Highlights our work with content-focused, visually appealing sites
+
+When sharing these examples, format them clearly and encourage users to check them out. You can say something like "Here are some recent websites we've built - feel free to click through and explore them."
+
 **Technology Stack & Services:**
 - Full-stack web development
 - Machine Learning and AI implementation

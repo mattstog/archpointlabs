@@ -6,6 +6,10 @@ import { ArrowUp } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Figtree } from "next/font/google"
+import type { Components } from "react-markdown"
+import PortfolioModal from "@/components/portfolio-modal"
+import type { PortfolioItem } from "@/components/portfolio-grid"
+import { ExternalLink } from "lucide-react"
 
 const figtree = Figtree({ subsets: ["latin"] })
 
@@ -18,20 +22,56 @@ type Message = {
   content: string
 }
 
+// Portfolio items configuration
+const portfolioItems: PortfolioItem[] = [
+  {
+    id: "1",
+    title: "Classic Team Realty",
+    description: "Modern marketing site for top realty company",
+    posterUrl: "/ctr-hero.png",
+    iframeUrl: "https://classicteamrealty.com",
+  },
+  {
+    id: "2",
+    title: "Mitch Harris",
+    description: "Modern marketing site for MLB player",
+    posterUrl: "/mitch-hero.png",
+    iframeUrl: "https://mitchharris.com",
+  },
+  {
+    id: "3",
+    title: "Fromm Scratch",
+    description: "Modern marketing site for top baking blog",
+    posterUrl: "/fs-hero.png",
+    iframeUrl: "https://frommscratch.com",
+  },
+]
+
 export default function Chat() {
   const [input, setInput] = useState("")
+  
+  // for conversation
   const [messages, setMessages] = useState<Message[]>([])
+  const userMessageCount = messages.filter(m => m.role === "user").length
+
   const [isLoading, setIsLoading] = useState(false)
   const [arrived, setArrived] = useState(false)
   const [showLabel, setShowLabel] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [sessionId] = useState(() => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
-    const [usedExamples, setUsedExamples] = useState<string[]>([])
-    const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [usedExamples, setUsedExamples] = useState<string[]>([])
+  const [mounted, setMounted] = useState(false)
+  
+  // Portfolio modal state
+  const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
+  const [activeIframe, setActiveIframe] = useState<HTMLIFrameElement | null>(null)
+  const poolRef = useRef<HTMLDivElement>(null)
+  const iframeMapRef = useRef<Map<string, HTMLIFrameElement>>(new Map())
 
+  useEffect(() => setMounted(true), [])
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   const examples = [
     "Can you help with AI implementation?",
@@ -45,30 +85,172 @@ export default function Chat() {
     "I'm interested in custom software development"
   ]
 
+  function scrollToBottom(el: HTMLElement, behavior: ScrollBehavior = "auto") {
+  el.scrollTo({ top: el.scrollHeight, behavior })
+}
+
+type AutoScrollMode = "bottom" | "anchor"
+
+function useAutoScroll(
+  ref: React.RefObject<HTMLDivElement | null>,
+  deps: any[],
+  opts?: {
+    mode?: AutoScrollMode
+    anchorEl?: () => HTMLElement | null // when mode === "anchor"
+    pad?: number // px from top when anchored
+  }
+) {
+  const mode = opts?.mode ?? "bottom"
+  const pad = opts?.pad ?? 8
+
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const [hasQueuedNew, setHasQueuedNew] = useState(false)
+
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
+    const el = ref.current
+    if (!el) return
+    const THRESHOLD = 32
+
+    const onScroll = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+      const atBottom = distanceFromBottom <= THRESHOLD
+      setIsAtBottom(atBottom)
+      if (atBottom) setHasQueuedNew(false)
     }
-  }, [messages])
 
-  useEffect(() => {
-    const handleLinkClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'A') {
-        const anchor = target as HTMLAnchorElement;
-        if (anchor.href.startsWith('http')) {
-          e.preventDefault();
-          window.open(anchor.href, '_blank', 'noopener,noreferrer');
-        }
+    el.addEventListener("scroll", onScroll, { passive: true })
+    onScroll()
+
+    // Keep alignment on layout changes
+    const ro = new ResizeObserver(() => {
+      if (!ref.current) return
+      const el = ref.current
+
+      if (mode === "bottom") {
+        if (isAtBottom) el.scrollTo({ top: el.scrollHeight })
+      } else if (mode === "anchor" && opts?.anchorEl) {
+        const anchor = opts.anchorEl()
+        if (!anchor) return
+        // Keep anchor at `pad` px from top of container
+        const topNow =
+          anchor.getBoundingClientRect().top - el.getBoundingClientRect().top
+        const delta = topNow - pad
+        if (delta !== 0) el.scrollTop += delta
       }
-    };
-
-    document.addEventListener('click', handleLinkClick);
+    })
+    ro.observe(el)
 
     return () => {
-      document.removeEventListener('click', handleLinkClick);
-    };
-  }, []);
+      el.removeEventListener("scroll", onScroll)
+      ro.disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref, mode, pad])
+
+  // On deps change (new message / loading tick)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    if (mode === "bottom") {
+      if (isAtBottom) {
+        el.scrollTo({ top: el.scrollHeight })
+      } else {
+        setHasQueuedNew(true)
+      }
+    } else if (mode === "anchor" && opts?.anchorEl) {
+      const anchor = opts.anchorEl()
+      if (!anchor) return
+      // Wait a frame for paint, then lock anchor to top with padding
+      requestAnimationFrame(() => {
+        if (!ref.current) return
+        const el2 = ref.current
+        const topNow =
+          anchor.getBoundingClientRect().top - el2.getBoundingClientRect().top
+        const delta = topNow - pad
+        if (delta !== 0) el2.scrollTop += delta
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps.concat([mode, pad]))
+
+  const jumpToBottom = (smooth = true) => {
+    const el = ref.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" })
+    setHasQueuedNew(false)
+  }
+
+  return { isAtBottom, hasQueuedNew, jumpToBottom }
+}
+
+  // useEffect(() => {
+  //   if (scrollContainerRef.current) {
+  //     scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
+  //   }
+  // }, [messages, isLoading])
+
+  // figure out last msg + previous user msg
+const last = messages[messages.length - 1]
+let prevUserId: string | null = null
+for (let i = messages.length - 2; i >= 0; i--) {
+  if (messages[i].role === "user") { prevUserId = messages[i].id; break }
+}
+
+const mode: "bottom" | "anchor" =
+  last?.role === "assistant" ? "anchor" : "bottom"
+
+const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
+  scrollContainerRef,
+  // trigger on any new message and loading state
+  [messages.length, isLoading],
+  {
+    mode,
+    pad: 8, // vertical padding from top when anchored
+    anchorEl: () => (prevUserId ? messageRefs.current.get(prevUserId) ?? null : null),
+  }
+)
+
+  // Initialize iframe pool for portfolio items
+  useEffect(() => {
+    if (!poolRef.current) return
+
+    for (const item of portfolioItems) {
+      if (!iframeMapRef.current.has(item.id)) {
+        const el = document.createElement("iframe")
+        el.src = item.iframeUrl
+        el.title = item.title
+        el.setAttribute(
+          "allow",
+          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        )
+        Object.assign(el.style, {
+          position: "absolute",
+          left: "-9999px",
+          top: "0",
+          width: "800px",
+          height: "600px",
+          border: "0",
+          visibility: "hidden",
+        } as CSSStyleDeclaration)
+
+        const handleLoad = () => {
+          el.dataset.loaded = "true"
+        }
+        el.addEventListener("load", handleLoad)
+
+        poolRef.current.appendChild(el)
+        iframeMapRef.current.set(item.id, el)
+      }
+    }
+
+    return () => {
+      iframeMapRef.current.forEach((el) => {
+        el.remove()
+      })
+      iframeMapRef.current.clear()
+    }
+  }, [])
 
   function useIsMobile(breakpoint = 768) {
     const [isMobile, setIsMobile] = useState(false)
@@ -92,6 +274,9 @@ export default function Chat() {
 
     const newMessages = [...messages, userMessage]
     setMessages(newMessages)
+    requestAnimationFrame(() => {
+      jumpToBottom(true)
+    })
     setIsLoading(true)
 
     try {
@@ -145,6 +330,72 @@ export default function Chat() {
     }
   }
 
+  // Handle portfolio link clicks
+  const handlePortfolioClick = (url: string) => {
+    const item = portfolioItems.find(p => p.iframeUrl === url)
+    if (item) {
+      const el = iframeMapRef.current.get(item.id) || null
+      setActiveIframe(el)
+      setSelectedItem(item)
+    }
+  }
+
+  // Return iframe to pool when modal closes
+  const returnIframeToPool = () => {
+    if (activeIframe && poolRef.current) {
+      poolRef.current.appendChild(activeIframe)
+      Object.assign(activeIframe.style, {
+        position: "absolute",
+        left: "-9999px",
+        top: "0",
+        width: "800px",
+        height: "600px",
+        border: "0",
+        visibility: "hidden",
+      } as CSSStyleDeclaration)
+    }
+    setActiveIframe(null)
+    setSelectedItem(null)
+  }
+
+  // Custom markdown components for portfolio links
+  const markdownComponents: Components = {
+    p: ({ children }) => <p className="m-0 inline">{children}</p>,
+    a: ({ href, children }) => {
+      const isPortfolioLink = href && portfolioItems.some(i => i.iframeUrl === href)
+
+      const base =
+        "chat-link inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 " +
+        "underline underline-offset-2 decoration-2 " +
+        "bg-white/10 text-white hover:bg-white/20 " +
+        "transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+
+      if (isPortfolioLink && href) {
+        return (
+          <button
+            onClick={(e) => { e.preventDefault(); handlePortfolioClick(href) }}
+            className={base + " cursor-pointer"}
+          >
+            {children}
+            <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+          </button>
+        )
+      }
+
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={base}
+        >
+          {children}
+          <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+        </a>
+      )
+    },
+  }
+
   const hasMessages = messages.length > 0
 
   const isMobile = useIsMobile()
@@ -170,17 +421,27 @@ export default function Chat() {
 
   return (
     <main className={`${figtree.className} min-h-screen w-full`}>
+      {/* Hidden iframe pool */}
+      <div
+        ref={poolRef}
+        aria-hidden="true"
+        style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
+      />
+
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
       <div
         className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left"
       >
-        <div className="absolute top-6 left-6 drop-shadow-lg">
+        <a
+          href="https://archpointlabs.com"
+          className="absolute top-6 left-6 drop-shadow-lg z-50"
+        >
           <img
             src="/logos/aidans-try-for-mobile-logo.svg"
             alt="Archpoint Labs Logo"
             className="h-10 w-auto"
           />
-        </div>
+        </a>
         <a
           href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
           target="_blank"
@@ -217,8 +478,8 @@ export default function Chat() {
           {/** Our sick glass UI */}
           {hasMessages && (
             <motion.div
-              className="scrollarea mb-8 w-full h-[50vh] sm bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 overflow-y-auto scroll-smooth"
               ref={scrollContainerRef}
+              className={`scrollarea mb-8 w-full h-[50vh] sm bg-gray-900/25 backdrop-blur-md border border-white/40 rounded-2xl p-6 overflow-y-auto scroll-smooth`}    
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
@@ -226,24 +487,33 @@ export default function Chat() {
               <div className="space-y-4">
                 {messages.map((m) => {
                   const isUser = m.role === "user"
+                  const content = isUser ? m.content : m.content.replace(/\n{2,}/g, "\n")
                   
                   return (
                     <div
                       key={m.id}
+                      ref={(el) => {
+                        if (el) messageRefs.current.set(m.id, el)
+                        else messageRefs.current.delete(m.id)
+                      }}
                       className={`flex ${isUser ? "justify-end text-left" : "justify-start text-left"}`}
                     >
                       <div
-                        className={`text-white/90 ${
-                          isUser ? "mr-4 bg-blue-500 py-2 px-4 rounded-full inline-block w-fit max-w-[80%] whitespace-pre-wrap break-words" : ""
+                        className={`${
+                          isUser
+                            // USER: keep centered pill
+                            ? "mr-4 bg-blue-500 text-white rounded-2xl px-4 py-2 inline-flex items-center justify-center text-left whitespace-pre-wrap break-words max-w-[75%]"
+                            // ASSISTANT: stack label + content vertically
+                            : "ml-0 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left whitespace-pre-wrap break-words max-w-[75%] bg-white/0"
                         }`}
                       >
                         {!isUser && (
-                          <div className="font-semibold mb-1">
-                            Milo:
-                          </div>
+                          <div className="font-semibold">Milo:</div>
                         )}
-                        <div className="prose prose-inherit max-w-none leading-relaxed">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                        <div className="leading-relaxed w-full">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                            {content}
+                          </ReactMarkdown>
                         </div>
                       </div>
                     </div>
@@ -251,9 +521,9 @@ export default function Chat() {
                 })}
                 {isLoading && (
                   <div className="flex justify-start text-left">
-                    <div className="text-white/90">
-                      <div className="font-semibold mb-1">Milo:</div>
-                      <div className="prose prose-inherit max-w-none leading-relaxed flex items-center">
+                    <div className="ml-0 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left whitespace-pre-wrap break-words max-w-[75%] bg-white/0">
+                      <div className="font-semibold">Milo:</div>
+                      <div className="leading-relaxed w-full flex items-center">
                         <span>Thinking</span>
                         <span className="inline-flex ml-1">
                           <motion.span
@@ -297,7 +567,7 @@ export default function Chat() {
 
           {/** Orb / Form */}
           <motion.div
-            className="relative z-10 mb-0 lg:mb-2 rounded-full border border-zinc-300 shadow-xl"
+            className="relative z-10 mb-0 lg:mb-2 rounded-full border border-zinc-300 shadow-xl text-black"
             initial={false}
             animate={arrived ? { width: isMobile ? 380 : 672, height: 64 } : { width: 48, height: 48 }}
             transition={{
@@ -310,7 +580,7 @@ export default function Chat() {
             }}
           >
             <div className="relative h-full w-full">
-              <div className="absolute inset-0 rounded-full bg-white z-0">
+              <div className="absolute inset-0 rounded-full bg-white z-0 text-black">
                 <motion.form
                   key="form"
                   className="absolute inset-0 z-10"
@@ -319,7 +589,7 @@ export default function Chat() {
                   onSubmit={handleSubmit}
                 >
                   <input
-                    className={`h-full w-full rounded-full px-4 bg-transparent pr-20 focus:outline-none focus:ring-0 ${
+                    className={`h-full w-full rounded-full px-4 bg-transparent pr-20 focus:outline-none focus:ring-0 text-black ${
                       arrived ? "" : "pointer-events-none"
                     }`}
                     value={input}
@@ -341,7 +611,7 @@ export default function Chat() {
             </div>
           </motion.div>
 
-          <motion.ul className="mt-5 flex flex-wrap gap-4 items-center justify-center w-full">
+          <motion.ul className="mt-5 flex flex-wrap gap-4 items-center justify-center w-full text-black">
             {examplesToUse
               .filter(example => !usedExamples.includes(example))
               .map((t, i) => (
@@ -357,7 +627,7 @@ export default function Chat() {
                     delay: i * 0.3,
                   }}
                   onClick={() => handleExampleClick(t)}
-                  className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow ${
+                  className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow text-black ${
                     isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-zinc-100"
                   }`}
                 >
@@ -367,6 +637,20 @@ export default function Chat() {
           </motion.ul>
         </motion.div>
       </div>
+
+      {/* Portfolio Modal */}
+      <PortfolioModal
+        item={selectedItem}
+        iframeEl={activeIframe}
+        onClose={returnIframeToPool}
+      />
+      <style jsx global>{`
+        .scrollarea .chat-link:visited { color: #fff; }
+        .scrollarea .chat-link svg {
+          display: inline-block;
+          vertical-align: middle;
+        }
+      `}</style>
     </main>
   )
 }
