@@ -18,10 +18,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.archpointlabs.com"),
   title: "Archpoint Labs",
   description: "Archpoint Labs builds what's next — custom apps, websites, and automations that elevate your business. Chat with our AI Assistant, Milo, to explore solutions designed to help your business grow.",
   icons: {
     icon: "/logo-apl-favicon.svg",
+    apple: "/sharing/apple-touch-icon-apl.png",
+  },
+  openGraph: {
+    title: "Archpoint Labs",
+    description:
+      "Custom apps, websites, and AI automations that elevate your business.",
+    url: "https://www.archpointlabs.com/",
+    siteName: "Archpoint Labs",
+    images: [
+      {
+        url: "/sharing/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Archpoint Labs — We build what's next",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
   },
 };
 
