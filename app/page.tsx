@@ -29,21 +29,24 @@ const portfolioItems: PortfolioItem[] = [
     title: "Classic Team Realty",
     description: "Modern marketing site for top realty company",
     posterUrl: "/ctr-hero.png",
-    iframeUrl: "https://classicteamrealty.com",
+    screenshotUrl: "/ctr-screenshot.png",
+    liveUrl: "https://classicteamrealty.com",
   },
   {
     id: "2",
     title: "Mitch Harris",
     description: "Modern marketing site for MLB player",
     posterUrl: "/mitch-hero.png",
-    iframeUrl: "https://mitchharris.com",
+    screenshotUrl: "/mitch-harris-screenshot.png",
+    liveUrl: "https://mitchharris.com",
   },
   {
     id: "3",
     title: "Fromm Scratch",
     description: "Modern marketing site for top baking blog",
     posterUrl: "/fs-hero.png",
-    iframeUrl: "https://frommscratch.com",
+    screenshotUrl: "/fs-screenshot.png",
+    liveUrl: "https://frommscratch.com",
   },
 ]
 
@@ -52,7 +55,6 @@ export default function Chat() {
   
   // for conversation
   const [messages, setMessages] = useState<Message[]>([])
-  const userMessageCount = messages.filter(m => m.role === "user").length
 
   const [isLoading, setIsLoading] = useState(false)
   const [arrived, setArrived] = useState(false)
@@ -64,9 +66,6 @@ export default function Chat() {
   
   // Portfolio modal state
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
-  const [activeIframe, setActiveIframe] = useState<HTMLIFrameElement | null>(null)
-  const poolRef = useRef<HTMLDivElement>(null)
-  const iframeMapRef = useRef<Map<string, HTMLIFrameElement>>(new Map())
 
   useEffect(() => setMounted(true), [])
 
@@ -184,12 +183,6 @@ function useAutoScroll(
   return { isAtBottom, hasQueuedNew, jumpToBottom }
 }
 
-  // useEffect(() => {
-  //   if (scrollContainerRef.current) {
-  //     scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
-  //   }
-  // }, [messages, isLoading])
-
   // figure out last msg + previous user msg
 const last = messages[messages.length - 1]
 let prevUserId: string | null = null
@@ -210,47 +203,6 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
     anchorEl: () => (prevUserId ? messageRefs.current.get(prevUserId) ?? null : null),
   }
 )
-
-  // Initialize iframe pool for portfolio items
-  useEffect(() => {
-    if (!poolRef.current) return
-
-    for (const item of portfolioItems) {
-      if (!iframeMapRef.current.has(item.id)) {
-        const el = document.createElement("iframe")
-        el.src = item.iframeUrl
-        el.title = item.title
-        el.setAttribute(
-          "allow",
-          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        )
-        Object.assign(el.style, {
-          position: "absolute",
-          left: "-9999px",
-          top: "0",
-          width: "800px",
-          height: "600px",
-          border: "0",
-          visibility: "hidden",
-        } as CSSStyleDeclaration)
-
-        const handleLoad = () => {
-          el.dataset.loaded = "true"
-        }
-        el.addEventListener("load", handleLoad)
-
-        poolRef.current.appendChild(el)
-        iframeMapRef.current.set(item.id, el)
-      }
-    }
-
-    return () => {
-      iframeMapRef.current.forEach((el) => {
-        el.remove()
-      })
-      iframeMapRef.current.clear()
-    }
-  }, [])
 
   function useIsMobile(breakpoint = 768) {
     const [isMobile, setIsMobile] = useState(false)
@@ -330,39 +282,22 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
     }
   }
 
-  // Handle portfolio link clicks
   const handlePortfolioClick = (url: string) => {
-    const item = portfolioItems.find(p => p.iframeUrl === url)
+    const item = portfolioItems.find(p => p.liveUrl === url)
     if (item) {
-      const el = iframeMapRef.current.get(item.id) || null
-      setActiveIframe(el)
       setSelectedItem(item)
     }
   }
 
-  // Return iframe to pool when modal closes
-  const returnIframeToPool = () => {
-    if (activeIframe && poolRef.current) {
-      poolRef.current.appendChild(activeIframe)
-      Object.assign(activeIframe.style, {
-        position: "absolute",
-        left: "-9999px",
-        top: "0",
-        width: "800px",
-        height: "600px",
-        border: "0",
-        visibility: "hidden",
-      } as CSSStyleDeclaration)
-    }
-    setActiveIframe(null)
+  const returnPortfolioModal = () => {
     setSelectedItem(null)
   }
 
-  // Custom markdown components for portfolio links
+  // !!! RELEVANT TO PORTFOLIO LINKS -- Custom markdown components for portfolio links
   const markdownComponents: Components = {
     p: ({ children }) => <p className="m-0 inline">{children}</p>,
     a: ({ href, children }) => {
-      const isPortfolioLink = href && portfolioItems.some(i => i.iframeUrl === href)
+      const isPortfolioLink = href && portfolioItems.some(i => i.liveUrl === href)
 
       const base =
         "chat-link inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 " +
@@ -402,9 +337,8 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
   const examplesToUse = isMobile ? examplesForMobile : examples;
 
-  const MOBILE_SCROLL_BY_PX = 360 // <— tweak this amount as you like
+  const MOBILE_SCROLL_BY_PX = 360
   const didMobileScrollRef = useRef(false)
-
   // If you prefer to mirror the naming from your prompt:
   const isMessages = hasMessages
 
@@ -421,12 +355,6 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
   return (
     <main className={`${figtree.className} min-h-screen w-full`}>
-      {/* Hidden iframe pool */}
-      <div
-        ref={poolRef}
-        aria-hidden="true"
-        style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
-      />
 
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
       <div
@@ -641,8 +569,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
       {/* Portfolio Modal */}
       <PortfolioModal
         item={selectedItem}
-        iframeEl={activeIframe}
-        onClose={returnIframeToPool}
+        onClose={returnPortfolioModal}
       />
       <style jsx global>{`
         .scrollarea .chat-link:visited { color: #fff; }
