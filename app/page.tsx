@@ -293,7 +293,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
     setSelectedItem(null)
   }
 
-  // !!! RELEVANT TO PORTFOLIO LINKS -- Custom markdown components for portfolio links
+  // Custom markdown components for portfolio links
   const markdownComponents: Components = {
     p: ({ children }) => <p className="m-0 inline">{children}</p>,
     a: ({ href, children }) => {

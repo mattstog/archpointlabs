@@ -41,23 +41,23 @@ export default function PortfolioModal({ item, onClose }: PortfolioModalProps) {
     >
       <div className="w-[97vw] md:w-[96vw] lg:w-[95vw] bg-white rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col my-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between p-4 md:p-6 bg-gradient-to-b from-black/50 to-transparent backdrop-blur-sm">
+        <div className="sticky top-0 z-10 flex items-center justify-between p-4 md:p-6  backdrop-blur-sm">
           <div className="text-white flex-1">
-            <h2 className="text-2xl md:text-3xl font-bold text-balance">{item.title}</h2>
-            <p className="text-sm text-white mt-1">{item.description}</p>
+            <h2 className="lg:text-2xl md:text-3xl font-bold text-balance text-[#000000]">{item.title}</h2>
+            <p className="text-sm mt-1 text-[#000000]">{item.description}</p>
           </div>
           <div className="flex items-center gap-3 ml-4">
             <a
               href={item.liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex text-white hover:bg-white/20 rounded-lg px-4 py-2 transition-colors text-sm font-medium whitespace-nowrap"
+              className="hidden sm:inline-flex text-black hover:bg-white/20 rounded-lg px-4 py-2 transition-colors text-sm font-medium whitespace-nowrap"
             >
               Visit Live Site →
             </a>
             <button
               onClick={onClose}
-              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors flex-shrink-0"
+              className="text-black hover:bg-white/20 rounded-full p-2 transition-colors flex-shrink-0"
               aria-label="Close modal"
             >
               <svg
