@@ -30,6 +30,7 @@ const portfolioItems: PortfolioItem[] = [
     description: "Modern marketing site for top realty company",
     posterUrl: "/ctr-hero.png",
     screenshotUrl: "/ctr-screenshot.png",
+    screenshotUrlMobile: "/ctr-screenshot-mobile.png",
     liveUrl: "https://classicteamrealty.com",
   },
   {
@@ -38,6 +39,7 @@ const portfolioItems: PortfolioItem[] = [
     description: "Modern marketing site for MLB player",
     posterUrl: "/mitch-hero.png",
     screenshotUrl: "/mitch-harris-screenshot.png",
+    screenshotUrlMobile: "/mitch-harris-screenshot-mobile.png",
     liveUrl: "https://mitchharris.com",
   },
   {
@@ -46,6 +48,7 @@ const portfolioItems: PortfolioItem[] = [
     description: "Modern marketing site for top baking blog",
     posterUrl: "/fs-hero.png",
     screenshotUrl: "/fs-screenshot.png",
+    screenshotUrlMobile: "/fs-screenshot-mobile-new.png",
     liveUrl: "https://frommscratch.com",
   },
 ]
@@ -594,6 +597,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
       <PortfolioModal
         item={selectedItem}
         onClose={returnPortfolioModal}
+        isMobile={isMobile}
       />
       <style jsx global>{`
         .scrollarea .chat-link:visited { color: #fff; }

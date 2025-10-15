@@ -8,9 +8,10 @@ import type { PortfolioItem } from "./portfolio-grid"
 interface PortfolioModalProps {
   item: PortfolioItem | null
   onClose: () => void
+  isMobile: boolean
 }
 
-export default function PortfolioModal({ item, onClose }: PortfolioModalProps) {
+export default function PortfolioModal({ item, onClose, isMobile }: PortfolioModalProps) {
   const shellRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -31,10 +32,12 @@ export default function PortfolioModal({ item, onClose }: PortfolioModalProps) {
 
   if (!item) return null
 
+  const screenshotUrl = isMobile ? item.screenshotUrlMobile : item.screenshotUrl
+
   return (
     <div
       ref={shellRef}
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-300 pt-8 pb-8 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-300 pt-8 pb-8 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -82,7 +85,7 @@ export default function PortfolioModal({ item, onClose }: PortfolioModalProps) {
         <div ref={contentRef} className="relative w-full bg-gray-100 p-3 md:p-4">
           <div className="relative w-full bg-white rounded-lg overflow-hidden shadow-lg">
             <Image
-              src={item.screenshotUrl}
+              src={screenshotUrl}
               alt={`${item.title} preview`}
               width={1080}
               height={2000}
