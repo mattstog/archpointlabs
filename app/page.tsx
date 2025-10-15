@@ -387,9 +387,10 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
         {/** Headline & Subheadline */}
         <div
-        >
+        > <h1>
             Creating <br/> What&apos;s Next.
           </h1>
+          <p>
             {SUBHEAD}
           </p>
         </div>
