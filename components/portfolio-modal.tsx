@@ -1,21 +1,20 @@
 // components/portfolio-modal.tsx
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
+import Image from "next/image"
 import type { PortfolioItem } from "./portfolio-grid"
 
 interface PortfolioModalProps {
   item: PortfolioItem | null
-  iframeEl: HTMLIFrameElement | null
   onClose: () => void
 }
 
-export default function PortfolioModal({ item, iframeEl, onClose }: PortfolioModalProps) {
+export default function PortfolioModal({ item, onClose }: PortfolioModalProps) {
   const shellRef = useRef<HTMLDivElement>(null)
-  const mountRef = useRef<HTMLDivElement>(null)
-  const [loading, setLoading] = useState(true)
+  const contentRef = useRef<HTMLDivElement>(null)
 
-  // Handle Esc + body scroll lock
+  // Handle Esc key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -30,87 +29,81 @@ export default function PortfolioModal({ item, iframeEl, onClose }: PortfolioMod
     }
   }, [item, onClose])
 
-  // Reparent the already-loaded iframe into the modal, then return it on unmount
-  useEffect(() => {
-    if (!item || !iframeEl || !mountRef.current) return
-    const el = iframeEl
-
-    // Prepare it for visible display
-    Object.assign(el.style, {
-      position: "absolute",
-      left: "0",
-      top: "0",
-      width: "100%",
-      height: "100%",
-      border: "0",
-      visibility: "visible",
-    } as CSSStyleDeclaration)
-
-    // Show spinner until the iframe reported it finished loading at least once
-    const markLoaded = () => setLoading(false)
-    setLoading(el.dataset.loaded === "true" ? false : true)
-    el.addEventListener("load", markLoaded)
-
-    mountRef.current.appendChild(el)
-
-    return () => {
-      el.removeEventListener("load", markLoaded)
-      // Hand control back to parent (which will put it into the pool)
-      onClose()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item, iframeEl])
-
   if (!item) return null
 
   return (
     <div
       ref={shellRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-300"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-300 pt-8 pb-8 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="relative w-[95vw] h-[90vh] bg-white rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="w-[97vw] md:w-[96vw] lg:w-[95vw] bg-white rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col my-auto">
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent">
-          <div className="text-white">
-            <h2 className="text-2xl font-bold text-balance">{item.title}</h2>
-            <p className="text-sm text-white/80 mt-1">{item.description}</p>
+        <div className="sticky top-0 z-10 flex items-center justify-between p-4 md:p-6  backdrop-blur-sm">
+          <div className="text-white flex-1">
+            <h2 className="lg:text-2xl md:text-3xl font-bold text-balance text-[#000000]">{item.title}</h2>
+            <p className="text-sm mt-1 text-[#000000]">{item.description}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-            aria-label="Close modal"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="flex items-center gap-3 ml-4">
+            <a
+              href={item.liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex text-black hover:bg-white/20 rounded-lg px-4 py-2 transition-colors text-sm font-medium whitespace-nowrap"
             >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-            <span className="sr-only">Close modal</span>
-          </button>
+              Visit Live Site →
+            </a>
+            <button
+              onClick={onClose}
+              className="text-black hover:bg-white/20 rounded-full p-2 transition-colors flex-shrink-0"
+              aria-label="Close modal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Iframe mount point */}
-        <div ref={mountRef} className="relative w-full h-full bg-black">
-          {loading && (
-            <div className="absolute inset-0 grid place-items-center">
-              <div className="text-white/80 text-sm">Loading…</div>
-            </div>
-          )}
+        {/* Screenshot Preview */}
+        <div ref={contentRef} className="relative w-full bg-gray-100 p-3 md:p-4">
+          <div className="relative w-full bg-white rounded-lg overflow-hidden shadow-lg">
+            <Image
+              src={item.screenshotUrl}
+              alt={`${item.title} preview`}
+              width={1080}
+              height={2000}
+              className="w-full h-auto"
+              priority
+            />
+          </div>
+        </div>
+
+        {/* Footer CTA for Mobile */}
+        <div className="sm:hidden p-4 bg-gradient-to-t from-white to-transparent border-t border-gray-200">
+          <a
+            href={item.liveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
+          >
+            Visit Live Site →
+          </a>
         </div>
       </div>
     </div>
   )
 }
-
