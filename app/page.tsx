@@ -29,21 +29,24 @@ const portfolioItems: PortfolioItem[] = [
     title: "Classic Team Realty",
     description: "Modern marketing site for top realty company",
     posterUrl: "/ctr-hero.png",
-    iframeUrl: "https://classicteamrealty.com",
+    screenshotUrl: "/ctr-screenshot.png",
+    liveUrl: "https://classicteamrealty.com",
   },
   {
     id: "2",
     title: "Mitch Harris",
     description: "Modern marketing site for MLB player",
     posterUrl: "/mitch-hero.png",
-    iframeUrl: "https://mitchharris.com",
+    screenshotUrl: "/mitch-harris-screenshot.png",
+    liveUrl: "https://mitchharris.com",
   },
   {
     id: "3",
     title: "Fromm Scratch",
     description: "Modern marketing site for top baking blog",
     posterUrl: "/fs-hero.png",
-    iframeUrl: "https://frommscratch.com",
+    screenshotUrl: "/fs-screenshot.png",
+    liveUrl: "https://frommscratch.com",
   },
 ]
 
@@ -53,6 +56,10 @@ export default function Chat() {
   // for conversation
   const [messages, setMessages] = useState<Message[]>([])
   const userMessageCount = messages.filter(m => m.role === "user").length
+  // --- chat limit config ---
+  const CHAT_LIMIT = 50; 
+  const remainingTurns = Math.max(0, CHAT_LIMIT - userMessageCount);
+  const canChat = remainingTurns > 0;
 
   const [isLoading, setIsLoading] = useState(false)
   const [arrived, setArrived] = useState(false)
@@ -64,9 +71,6 @@ export default function Chat() {
   
   // Portfolio modal state
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
-  const [activeIframe, setActiveIframe] = useState<HTMLIFrameElement | null>(null)
-  const poolRef = useRef<HTMLDivElement>(null)
-  const iframeMapRef = useRef<Map<string, HTMLIFrameElement>>(new Map())
 
   useEffect(() => setMounted(true), [])
 
@@ -184,12 +188,6 @@ function useAutoScroll(
   return { isAtBottom, hasQueuedNew, jumpToBottom }
 }
 
-  // useEffect(() => {
-  //   if (scrollContainerRef.current) {
-  //     scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
-  //   }
-  // }, [messages, isLoading])
-
   // figure out last msg + previous user msg
 const last = messages[messages.length - 1]
 let prevUserId: string | null = null
@@ -211,47 +209,6 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
   }
 )
 
-  // Initialize iframe pool for portfolio items
-  useEffect(() => {
-    if (!poolRef.current) return
-
-    for (const item of portfolioItems) {
-      if (!iframeMapRef.current.has(item.id)) {
-        const el = document.createElement("iframe")
-        el.src = item.iframeUrl
-        el.title = item.title
-        el.setAttribute(
-          "allow",
-          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        )
-        Object.assign(el.style, {
-          position: "absolute",
-          left: "-9999px",
-          top: "0",
-          width: "800px",
-          height: "600px",
-          border: "0",
-          visibility: "hidden",
-        } as CSSStyleDeclaration)
-
-        const handleLoad = () => {
-          el.dataset.loaded = "true"
-        }
-        el.addEventListener("load", handleLoad)
-
-        poolRef.current.appendChild(el)
-        iframeMapRef.current.set(item.id, el)
-      }
-    }
-
-    return () => {
-      iframeMapRef.current.forEach((el) => {
-        el.remove()
-      })
-      iframeMapRef.current.clear()
-    }
-  }, [])
-
   function useIsMobile(breakpoint = 768) {
     const [isMobile, setIsMobile] = useState(false)
 
@@ -266,6 +223,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
   }
 
   const sendMessage = async (text: string) => {
+    if (!canChat) return; // hard stop if limit reached
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -317,6 +275,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
+    if (!canChat) return; // stop if at limit
     if (input.trim() && !isLoading) {
       sendMessage(input)
       setInput("")
@@ -324,37 +283,20 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
   }
 
   const handleExampleClick = (text: string) => {
-    if (!isLoading) {
-      setUsedExamples([...usedExamples, text])
-      sendMessage(text)
+  if (!isLoading && canChat) {
+      setUsedExamples([...usedExamples, text]);
+      sendMessage(text);
     }
-  }
+  };
 
-  // Handle portfolio link clicks
   const handlePortfolioClick = (url: string) => {
-    const item = portfolioItems.find(p => p.iframeUrl === url)
+    const item = portfolioItems.find(p => p.liveUrl === url)
     if (item) {
-      const el = iframeMapRef.current.get(item.id) || null
-      setActiveIframe(el)
       setSelectedItem(item)
     }
   }
 
-  // Return iframe to pool when modal closes
-  const returnIframeToPool = () => {
-    if (activeIframe && poolRef.current) {
-      poolRef.current.appendChild(activeIframe)
-      Object.assign(activeIframe.style, {
-        position: "absolute",
-        left: "-9999px",
-        top: "0",
-        width: "800px",
-        height: "600px",
-        border: "0",
-        visibility: "hidden",
-      } as CSSStyleDeclaration)
-    }
-    setActiveIframe(null)
+  const returnPortfolioModal = () => {
     setSelectedItem(null)
   }
 
@@ -362,7 +304,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
   const markdownComponents: Components = {
     p: ({ children }) => <p className="m-0 inline">{children}</p>,
     a: ({ href, children }) => {
-      const isPortfolioLink = href && portfolioItems.some(i => i.iframeUrl === href)
+      const isPortfolioLink = href && portfolioItems.some(i => i.liveUrl === href)
 
       const base =
         "chat-link inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 " +
@@ -402,9 +344,8 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
   const examplesToUse = isMobile ? examplesForMobile : examples;
 
-  const MOBILE_SCROLL_BY_PX = 360 // <— tweak this amount as you like
+  const MOBILE_SCROLL_BY_PX = 360
   const didMobileScrollRef = useRef(false)
-
   // If you prefer to mirror the naming from your prompt:
   const isMessages = hasMessages
 
@@ -421,12 +362,6 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
   return (
     <main className={`${figtree.className} min-h-screen w-full`}>
-      {/* Hidden iframe pool */}
-      <div
-        ref={poolRef}
-        aria-hidden="true"
-        style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
-      />
 
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
       <div
@@ -458,7 +393,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
           <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight">
             Creating <br/> What&apos;s Next.
           </h1>
-          <p className="mt-3 text-lg sm:px-3 lg:px-0 leading-relaxed text-white/90">
+          <p className="mt-3 text-lg px-4 sm:px-6 lg:px-0 leading-relaxed text-white/90">
             {SUBHEAD}
           </p>
         </div>
@@ -502,9 +437,9 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
                         className={`${
                           isUser
                             // USER: keep centered pill
-                            ? "mr-4 bg-blue-500 text-white rounded-2xl px-4 py-2 inline-flex items-center justify-center text-left whitespace-pre-wrap break-words max-w-[75%]"
+                            ? "-mr-2 bg-blue-500 text-white rounded-2xl px-4 py-2 inline-flex items-center justify-center text-left whitespace-pre-wrap break-words max-w-[75%]"
                             // ASSISTANT: stack label + content vertically
-                            : "ml-0 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left whitespace-pre-wrap break-words max-w-[75%] bg-white/0"
+                            : "-ml-4 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left whitespace-pre-wrap break-words max-w-[99%] bg-white/0"
                         }`}
                       >
                         {!isUser && (
@@ -521,7 +456,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
                 })}
                 {isLoading && (
                   <div className="flex justify-start text-left">
-                    <div className="ml-0 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left whitespace-pre-wrap break-words max-w-[75%] bg-white/0">
+                    <div className="-ml-4 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left whitespace-pre-wrap break-words max-w-[75%] bg-white/0">
                       <div className="font-semibold">Milo:</div>
                       <div className="leading-relaxed w-full flex items-center">
                         <span>Thinking</span>
@@ -593,11 +528,21 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
                       arrived ? "" : "pointer-events-none"
                     }`}
                     value={input}
-                    placeholder={arrived ? "Ask away..." : ""}
+                    placeholder={
+                      arrived
+                        ? (
+                            canChat
+                              ? remainingTurns <= 3
+                                ? `Ask away... (${remainingTurns} left)`
+                                : "Ask away..."
+                              : "Chat limit reached for this session"
+                          )
+                        : ""
+                    }
                     onChange={(e) => setInput(e.currentTarget.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || !canChat}
                   />
-                  {input && arrived && !isLoading && (
+                  {input && arrived && !isLoading && canChat && (
                     <button
                       type="button"
                       onClick={handleSubmit}
@@ -626,10 +571,17 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
                     duration: 0.5,
                     delay: i * 0.3,
                   }}
-                  onClick={() => handleExampleClick(t)}
+                  onClick={() => {
+                    if (!isLoading && canChat) handleExampleClick(t)
+                  }}
                   className={`px-3 py-1 rounded-full border border-zinc-300 bg-white text-sm shadow text-black ${
-                    isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-zinc-100"
+                    !canChat
+                      ? "cursor-not-allowed opacity-50"
+                      : isLoading
+                      ? "cursor-wait opacity-70"
+                      : "cursor-pointer hover:bg-zinc-100"
                   }`}
+                  title={!canChat ? "Chat limit reached for this session" : undefined}
                 >
                   {t}
                 </motion.li>
@@ -641,8 +593,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
       {/* Portfolio Modal */}
       <PortfolioModal
         item={selectedItem}
-        iframeEl={activeIframe}
-        onClose={returnIframeToPool}
+        onClose={returnPortfolioModal}
       />
       <style jsx global>{`
         .scrollarea .chat-link:visited { color: #fff; }
