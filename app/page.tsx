@@ -209,7 +209,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
   }
 )
 
-  function useIsMobile(breakpoint = 768) {
+  function useIsMobile(breakpoint = 1200) {
     const [isMobile, setIsMobile] = useState(false)
 
     useEffect(() => {
@@ -365,7 +365,6 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
       <div
-        className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center text-left"
       >
         <a
           href="https://archpointlabs.com"
@@ -388,20 +387,16 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
         {/** Headline & Subheadline */}
         <div
-          className="absolute top-18 lg:top-32 inset-x-0 text-center lg:left-24 lg:text-left text-white drop-shadow-l max-w-xl pointer-events-none z-0"
         >
-          <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight">
             Creating <br/> What&apos;s Next.
           </h1>
-          <p className="mt-3 text-lg px-4 sm:px-6 lg:px-0 leading-relaxed text-white/90">
             {SUBHEAD}
           </p>
         </div>
 
-        {/* travel wrapper */}
+        {/* Travel rapper */}
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
-          className={`absolute top-0 lg:top-[19%] left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center lg:ml-85 w-full max-w-[672px] px-4 ${(isMobile && hasMessages) ? "py-4" : ""}`}
           initial={{ y: isMobile ? "120svh" : "-40dvh" }}
           animate={{ y: isMobile ? "55svh" : 0 }}
           transition={{
