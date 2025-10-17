@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Figtree } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next"
 
 const figtree = Figtree({
   variable: "--font-figtree",
@@ -25,6 +26,11 @@ export const metadata: Metadata = {
     icon: "/logo-apl-favicon.svg",
     apple: "/sharing/apple-touch-icon-apl.png",
   },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
   openGraph: {
     title: "Archpoint Labs",
     description:
@@ -42,6 +48,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     type: "website",
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export default function RootLayout({
@@ -55,6 +64,7 @@ export default function RootLayout({
         className={`${figtree.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );

@@ -41,3 +41,32 @@ html, body {
   background: rgba(0,0,0,0.6);                  /* black pill */
   border-radius: 9999px;                        /* fully rounded */
 }
+
+/* Landscape orientation overlay for mobile devices */
+@media screen and (orientation: landscape) and (max-height: 600px) {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.97);
+    z-index: 99999;
+    backdrop-filter: blur(10px);
+  }
+  
+  body::after {
+    content: '📱\A\APlease rotate your device\Ato portrait mode\Afor the best experience';
+    white-space: pre-line;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100000;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 2rem;
+    line-height: 1.6;
+    font-family: var(--font-sans);
+  }
+}
