@@ -394,7 +394,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight">
             Creating <br/> What&apos;s Next.
           </h1>
-          <p className="mt-3 text-lg lg:px-0 leading-relaxed text-white/90">
+          <p className="mt-3 text-lg px-6 lg:px-0 leading-relaxed text-white/90">
             {SUBHEAD}
           </p>
         </div>
