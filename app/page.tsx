@@ -381,7 +381,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
           />
         </a>
         <a
-          href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
+          href="https://calendly.com/aidan-archpointlabs/30min"
           target="_blank"
           rel="noopener noreferrer"
           className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg"
