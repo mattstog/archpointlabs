@@ -368,7 +368,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
 
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
       <div
-        className="flex flex-col w-full min-h-screen py-24 px-12 mx-auto relative items-center"
+        className="w-full min-h-screen relative"
       >
         <a
           href="https://archpointlabs.com"
@@ -381,7 +381,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
           />
         </a>
         <a
-          href="https://calendly.com/d/cshp-3n3-t4n/meet-with-archpoint-labs"
+          href="https://calendly.com/aidan-archpointlabs/30min"
           target="_blank"
           rel="noopener noreferrer"
           className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg"
@@ -415,7 +415,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
           {hasMessages && (
             <motion.div
               ref={scrollContainerRef}
-              className={`scrollarea mb-8 w-full h-[50vh] sm bg-gray-900/25 backdrop-blur-md border border-white/40 rounded-2xl p-6 overflow-y-auto scroll-smooth`}    
+              className={`scrollarea mb-8 w-full h-[50vh] bg-gray-900/25 backdrop-blur-md border border-white/40 rounded-2xl p-6 overflow-y-auto scroll-smooth`}    
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
