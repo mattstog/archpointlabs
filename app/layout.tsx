@@ -19,23 +19,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.archpointlabs.com"),
+  // ✅ Use apex domain as the base
+  metadataBase: new URL("https://archpointlabs.com"),
   title: "Archpoint Labs",
-  description: "Archpoint Labs builds what's next — custom apps, websites, and automations that elevate your business. Chat with our AI Assistant, Milo, to explore solutions designed to help your business grow.",
+  description:
+    "Archpoint Labs builds what's next — custom apps, websites, and automations that elevate your business. Chat with our AI Assistant, Milo, to explore solutions designed to help your business grow.",
   icons: {
     icon: "/logo-apl-favicon.svg",
     apple: "/sharing/apple-touch-icon-apl.png",
   },
   viewport: {
-    width: 'device-width',
+    width: "device-width",
     initialScale: 1,
     maximumScale: 1,
+  },
+  // ✅ Explicit canonical
+  alternates: {
+    canonical: "/", // resolves to https://archpointlabs.com/
   },
   openGraph: {
     title: "Archpoint Labs",
     description:
       "Custom apps, websites, and AI automations that elevate your business.",
-    url: "https://www.archpointlabs.com/",
+    // ✅ Match apex here too
+    url: "https://archpointlabs.com/",
     siteName: "Archpoint Labs",
     images: [
       {
@@ -49,7 +56,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   other: {
-    'mobile-web-app-capable': 'yes',
+    "mobile-web-app-capable": "yes",
   },
 };
 
@@ -61,7 +68,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${figtree.variable} ${geistMono.variable} antialiased`}
+        className={`${figtree.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
         <Analytics />
