@@ -5,13 +5,10 @@ import { motion } from "motion/react"
 import { ArrowUp } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { Figtree } from "next/font/google"
 import type { Components } from "react-markdown"
 import PortfolioModal from "@/components/portfolio-modal"
 import type { PortfolioItem } from "@/components/portfolio-grid"
 import { ExternalLink } from "lucide-react"
-
-const figtree = Figtree({ subsets: ["latin"] })
 
 const SUBHEAD =
  "We develop custom software solutions, like apps, websites and AI agents that fully unlock the potential of your business. Chat with Milo, our AI Assistant, to discover what Archpoint Labs can do for you."
@@ -364,7 +361,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
   }, [mounted, isMobile, isMessages])
 
   return (
-    <main className={`${figtree.className} min-h-screen w-full`}>
+    <main className="min-h-screen w-full">
 
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
       <div
