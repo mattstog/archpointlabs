@@ -8,19 +8,11 @@ const sql = neon(process.env.POSTGRES_URL!)
 
 export async function GET(req: NextRequest) {
   try {
-    // Fetch all conversations ordered by most recent first
+    // Fetch all conversations ordered by most recent first (by ID since created_at may not exist)
     const conversations = await sql`
-      SELECT
-        id,
-        session_id,
-        ip,
-        user_agent,
-        message_count,
-        messages,
-        ai_response,
-        created_at
+      SELECT *
       FROM conversations
-      ORDER BY created_at DESC
+      ORDER BY id DESC
       LIMIT 1000
     `
 

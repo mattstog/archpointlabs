@@ -11,14 +11,14 @@ type Message = {
 }
 
 type Conversation = {
-  id: number
+  id: string
   session_id: string
   ip: string
   user_agent: string
   message_count: number
   messages: Message[]
   ai_response: string
-  created_at: string
+  ts: string
 }
 
 /**
@@ -37,10 +37,10 @@ export async function getRecentConversations(): Promise<Conversation[]> {
         message_count,
         messages,
         ai_response,
-        created_at
+        ts
       FROM conversations
-      WHERE created_at >= ${oneDayAgo}
-      ORDER BY created_at DESC
+      WHERE ts >= ${oneDayAgo}
+      ORDER BY ts DESC
     `
 
     return conversations as Conversation[]
@@ -54,7 +54,7 @@ export async function getRecentConversations(): Promise<Conversation[]> {
  * Format conversation for email display
  */
 function formatConversationForEmail(conversation: Conversation): string {
-  const date = new Date(conversation.created_at).toLocaleString('en-US', {
+  const date = new Date(conversation.ts).toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

@@ -9,14 +9,14 @@ type Message = {
 }
 
 type Conversation = {
-  id: number
+  id: string
   session_id: string
   ip: string
   user_agent: string
   message_count: number
   messages: Message[]
   ai_response: string
-  created_at: string
+  ts: string
 }
 
 export default function AdminDashboard() {
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
       conv.ip.toLowerCase().includes(searchTerm.toLowerCase()) ||
       JSON.stringify(conv.messages).toLowerCase().includes(searchTerm.toLowerCase())
 
-    const convDate = new Date(conv.created_at)
+    const convDate = new Date(conv.ts)
     const now = new Date()
     let matchesDate = true
 
@@ -70,8 +70,8 @@ export default function AdminDashboard() {
     return matchesSearch && matchesDate
   })
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+  const formatDate = (conv: Conversation) => {
+    const date = new Date(conv.ts)
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
                 <p className="text-gray-400 text-sm mb-1">Today</p>
                 <p className="text-3xl font-bold">
                   {conversations.filter(c =>
-                    new Date(c.created_at).toDateString() === new Date().toDateString()
+                    new Date(c.ts).toDateString() === new Date().toDateString()
                   ).length}
                 </p>
               </div>
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
                 <p className="text-3xl font-bold">
                   {conversations.filter(c => {
                     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                    return new Date(c.created_at) >= weekAgo
+                    return new Date(c.ts) >= weekAgo
                   }).length}
                 </p>
               </div>
