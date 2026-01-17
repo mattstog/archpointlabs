@@ -149,13 +149,13 @@ export default function AdminDashboard() {
           </div>
 
           <button
-            onClick={() => setDateFilter('today')}
+            onClick={() => setDateFilter(dateFilter === 'today' ? 'all' : 'today')}
             className={`bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border transition-all text-left w-full ${
               dateFilter === 'today'
                 ? 'border-green-500 ring-2 ring-green-500/50'
                 : 'border-gray-700 hover:border-green-500/50 hover:bg-gray-800/70'
             }`}
-            aria-label="Filter to show today's conversations"
+            aria-label={dateFilter === 'today' ? 'Clear filter' : "Filter to show today's conversations"}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -173,13 +173,13 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => setDateFilter('week')}
+            onClick={() => setDateFilter(dateFilter === 'week' ? 'all' : 'week')}
             className={`bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border transition-all text-left w-full ${
               dateFilter === 'week'
                 ? 'border-purple-500 ring-2 ring-purple-500/50'
                 : 'border-gray-700 hover:border-purple-500/50 hover:bg-gray-800/70'
             }`}
-            aria-label="Filter to show this week's conversations"
+            aria-label={dateFilter === 'week' ? 'Clear filter' : "Filter to show this week's conversations"}
           >
             <div className="flex items-center justify-between">
               <div>
