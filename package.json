@@ -40,5 +40,8 @@
     "tailwindcss": "^3.4.19",
     "tsx": "^4.21.0",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@next/swc-linux-arm64-gnu": "^16.1.3"
   }
 }

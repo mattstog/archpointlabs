@@ -48,6 +48,9 @@ export default function AdminDashboard() {
   }
 
   const filteredConversations = conversations.filter(conv => {
+    // Skip conversations without timestamp
+    if (!conv.ts) return false
+
     const matchesSearch =
       conv.session_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       conv.ip.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -71,6 +74,7 @@ export default function AdminDashboard() {
   })
 
   const formatDate = (conv: Conversation) => {
+    if (!conv.ts) return 'Unknown date'
     const date = new Date(conv.ts)
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
@@ -144,7 +148,7 @@ export default function AdminDashboard() {
                 <p className="text-gray-400 text-sm mb-1">Today</p>
                 <p className="text-3xl font-bold">
                   {conversations.filter(c =>
-                    new Date(c.ts).toDateString() === new Date().toDateString()
+                    c.ts && new Date(c.ts).toDateString() === new Date().toDateString()
                   ).length}
                 </p>
               </div>
@@ -158,6 +162,7 @@ export default function AdminDashboard() {
                 <p className="text-gray-400 text-sm mb-1">This Week</p>
                 <p className="text-3xl font-bold">
                   {conversations.filter(c => {
+                    if (!c.ts) return false
                     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                     return new Date(c.ts) >= weekAgo
                   }).length}
