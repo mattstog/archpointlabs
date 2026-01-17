@@ -48,8 +48,8 @@ export default function AdminDashboard() {
   }
 
   const filteredConversations = conversations.filter(conv => {
-    // Skip conversations without timestamp
-    if (!conv.ts) return false
+    // Skip null/undefined conversations or those without timestamp
+    if (!conv || !conv.ts) return false
 
     const matchesSearch =
       conv.session_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,21 +73,26 @@ export default function AdminDashboard() {
     return matchesSearch && matchesDate
   })
 
-  const formatDate = (conv: Conversation) => {
-    if (!conv.ts) return 'Unknown date'
-    const date = new Date(conv.ts)
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    }).format(date)
+  const formatDate = (conv: Conversation | null | undefined) => {
+    if (!conv || !conv.ts) return 'Unknown date'
+    try {
+      const date = new Date(conv.ts)
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }).format(date)
+    } catch (error) {
+      return 'Invalid date'
+    }
   }
 
   const getConversationPreview = (messages: Message[]) => {
-    const userMessages = messages.filter(m => m.role === 'user')
+    if (!messages || messages.length === 0) return 'No messages'
+    const userMessages = messages.filter(m => m?.role === 'user')
     if (userMessages.length === 0) return 'No messages'
     return userMessages[0].content.slice(0, 100) + (userMessages[0].content.length > 100 ? '...' : '')
   }
