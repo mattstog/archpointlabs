@@ -1,8 +1,9 @@
 // lib/email.ts
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 import { neon } from '@neondatabase/serverless'
 
 const sql = neon(process.env.POSTGRES_URL!)
+const resend = new Resend(process.env.RESEND_API_KEY!)
 
 type Message = {
   role: 'user' | 'assistant' | 'system'
@@ -19,15 +20,6 @@ type Conversation = {
   ai_response: string
   created_at: string
 }
-
-// Create transporter for Gmail
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-})
 
 /**
  * Get conversations from the last 24 hours
@@ -179,14 +171,18 @@ export async function sendDailyDigest(): Promise<{ success: boolean; message: st
       </html>
     `
 
-    const info = await transporter.sendMail({
-      from: `"Archpoint Labs Bot" <${process.env.GMAIL_USER}>`,
-      to: 'matt@archpointlabs.com',
+    const { data, error } = await resend.emails.send({
+      from: 'Archpoint Labs <notifications@archpointlabs.com>',
+      to: ['matt@archpointlabs.com'],
       subject: `📊 Daily Digest: ${conversations.length} New Conversation${conversations.length !== 1 ? 's' : ''}`,
       html: emailBody,
     })
 
-    console.log('✅ Daily digest email sent:', info.messageId)
+    if (error) {
+      throw new Error(`Resend error: ${error.message}`)
+    }
+
+    console.log('✅ Daily digest email sent:', data?.id)
 
     return {
       success: true,

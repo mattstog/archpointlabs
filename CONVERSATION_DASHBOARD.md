@@ -52,9 +52,8 @@ Add the following to your `.env.local` file:
 OPENAI_API_KEY=your_openai_api_key
 POSTGRES_URL=your_neon_postgres_url
 
-# New variables for email
-GMAIL_USER=your_gmail_address@gmail.com
-GMAIL_APP_PASSWORD=your_gmail_app_password
+# Resend API Key for email notifications
+RESEND_API_KEY=your_resend_api_key
 
 # Optional: Secure the cron endpoint
 CRON_SECRET=some_random_secret_key
@@ -63,25 +62,37 @@ CRON_SECRET=some_random_secret_key
 NEXT_PUBLIC_BASE_URL=https://archpointlabs.com
 ```
 
-### Step 2: Gmail App Password Setup
+### Step 2: Resend API Setup
 
-To use Gmail for sending emails, you need to create an App Password:
+This project uses [Resend](https://resend.com) for sending emails - it's simple, reliable, and has a generous free tier.
 
-1. **Enable 2-Factor Authentication** on your Gmail account
-   - Go to https://myaccount.google.com/security
-   - Enable 2-Step Verification
+1. **Sign up for Resend**
+   - Go to https://resend.com and create a free account
+   - Free tier includes 3,000 emails/month and 100 emails/day
 
-2. **Create an App Password**
-   - Go to https://myaccount.google.com/apppasswords
-   - Select "Mail" and "Other (Custom name)"
-   - Name it "Archpoint Labs Notifications"
-   - Click "Generate"
-   - Copy the 16-character password
+2. **Verify Your Domain** (Recommended for production)
+   - In Resend dashboard, go to "Domains"
+   - Click "Add Domain" and enter `archpointlabs.com`
+   - Add the DNS records shown (TXT, MX, and CNAME)
+   - Wait for verification (usually takes a few minutes)
+   - Once verified, you can send from `notifications@archpointlabs.com`
 
-3. **Add to Environment Variables**
+3. **Or Use Resend's Test Domain** (For testing)
+   - You can use `onboarding@resend.dev` for testing
+   - Edit `lib/email.ts` and change the `from` address to:
+     ```typescript
+     from: 'Archpoint Labs <onboarding@resend.dev>',
+     ```
+
+4. **Get Your API Key**
+   - In Resend dashboard, go to "API Keys"
+   - Click "Create API Key"
+   - Give it a name like "Archpoint Labs Production"
+   - Copy the API key (starts with `re_`)
+
+5. **Add to Environment Variables**
    ```bash
-   GMAIL_USER=your_email@gmail.com
-   GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx  # The generated password
+   RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
    ```
 
 ### Step 3: Database Schema
@@ -103,7 +114,19 @@ CREATE TABLE conversations (
 
 If the table doesn't exist, create it in your Neon dashboard.
 
-### Step 4: Deploy to Vercel
+### Step 4: Add Environment Variables to Vercel
+
+Before deploying, add your environment variables to Vercel:
+
+1. Go to your Vercel project settings
+2. Navigate to "Environment Variables"
+3. Add the following variables:
+   - `RESEND_API_KEY` - Your Resend API key
+   - `CRON_SECRET` - A random secret string for security
+   - `NEXT_PUBLIC_BASE_URL` - Your site URL (e.g., https://archpointlabs.com)
+4. Redeploy your application
+
+### Step 5: Deploy and Configure Cron
 
 The `vercel.json` file configures a cron job to run daily at 9:00 AM UTC:
 
@@ -124,13 +147,6 @@ The `vercel.json` file configures a cron job to run daily at 9:00 AM UTC:
 - `0 0 * * *` = Every day at midnight UTC
 
 **Note:** Vercel Cron is only available on Pro and Enterprise plans. For the Hobby plan, see "Alternative: Manual Scheduling" below.
-
-### Step 5: Add Environment Variables to Vercel
-
-1. Go to your Vercel project settings
-2. Navigate to "Environment Variables"
-3. Add all the variables from `.env.local`
-4. Redeploy your application
 
 ## Usage
 
@@ -232,19 +248,27 @@ Edit `app/admin/page.tsx` to add custom statistics or visualizations.
 
 ### Emails not sending
 
-1. **Check Gmail credentials:**
+1. **Check Resend API key:**
    ```bash
-   # Make sure these are set correctly
-   echo $GMAIL_USER
-   echo $GMAIL_APP_PASSWORD
+   # Make sure this is set correctly
+   echo $RESEND_API_KEY
    ```
 
-2. **Test the endpoint manually:**
+2. **Verify your domain in Resend:**
+   - Go to Resend dashboard → Domains
+   - Make sure `archpointlabs.com` is verified
+   - Or use `onboarding@resend.dev` for testing
+
+3. **Test the endpoint manually:**
    ```bash
    curl http://localhost:3000/api/send-digest
    ```
 
-3. **Check server logs** in Vercel dashboard for error messages
+4. **Check server logs** in Vercel dashboard for error messages
+
+5. **Check Resend logs:**
+   - Go to Resend dashboard → Emails
+   - Look for recent send attempts and any errors
 
 ### Dashboard not loading conversations
 
@@ -270,8 +294,9 @@ Edit `app/admin/page.tsx` to add custom statistics or visualizations.
 
 - The admin dashboard has no authentication by default. Consider adding auth middleware if needed.
 - Use `CRON_SECRET` to prevent unauthorized access to the digest endpoint
-- Gmail App Passwords are more secure than using your main password
+- Keep your `RESEND_API_KEY` secret - never commit it to version control
 - Never commit `.env` files to version control
+- Resend API keys can be rotated in the dashboard if compromised
 
 ## Support
 
