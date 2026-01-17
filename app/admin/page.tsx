@@ -92,9 +92,10 @@ export default function AdminDashboard() {
 
   const getConversationPreview = (messages: Message[]) => {
     if (!messages || messages.length === 0) return 'No messages'
-    const userMessages = messages.filter(m => m?.role === 'user')
+    const userMessages = messages.filter(m => m?.role === 'user' && m?.content)
     if (userMessages.length === 0) return 'No messages'
-    return userMessages[0].content.slice(0, 100) + (userMessages[0].content.length > 100 ? '...' : '')
+    const content = userMessages[0].content || ''
+    return content.slice(0, 100) + (content.length > 100 ? '...' : '')
   }
 
   if (loading) {
