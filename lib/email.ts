@@ -173,7 +173,7 @@ export async function sendDailyDigest(): Promise<{ success: boolean; message: st
 
     const { data, error } = await resend.emails.send({
       from: 'Archpoint Labs <notifications@archpointlabs.com>',
-      to: ['matt@archpointlabs.com'],
+      to: ['cofounders@archpointlabs.com'],
       subject: `📊 Daily Digest: ${conversations.length} New Conversation${conversations.length !== 1 ? 's' : ''}`,
       html: emailBody,
     })

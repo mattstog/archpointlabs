@@ -148,7 +148,15 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
+          <button
+            onClick={() => setDateFilter('today')}
+            className={`bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border transition-all text-left w-full ${
+              dateFilter === 'today'
+                ? 'border-green-500 ring-2 ring-green-500/50'
+                : 'border-gray-700 hover:border-green-500/50 hover:bg-gray-800/70'
+            }`}
+            aria-label="Filter to show today's conversations"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm mb-1">Today</p>
@@ -158,11 +166,21 @@ export default function AdminDashboard() {
                   ).length}
                 </p>
               </div>
-              <Calendar className="w-12 h-12 text-green-500" />
+              <Calendar className={`w-12 h-12 transition-colors ${
+                dateFilter === 'today' ? 'text-green-400' : 'text-green-500'
+              }`} />
             </div>
-          </div>
+          </button>
 
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
+          <button
+            onClick={() => setDateFilter('week')}
+            className={`bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border transition-all text-left w-full ${
+              dateFilter === 'week'
+                ? 'border-purple-500 ring-2 ring-purple-500/50'
+                : 'border-gray-700 hover:border-purple-500/50 hover:bg-gray-800/70'
+            }`}
+            aria-label="Filter to show this week's conversations"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm mb-1">This Week</p>
@@ -174,9 +192,11 @@ export default function AdminDashboard() {
                   }).length}
                 </p>
               </div>
-              <Clock className="w-12 h-12 text-purple-500" />
+              <Clock className={`w-12 h-12 transition-colors ${
+                dateFilter === 'week' ? 'text-purple-400' : 'text-purple-500'
+              }`} />
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Filters */}
