@@ -382,7 +382,7 @@ const { jumpToBottom } = useAutoScroll(
           />
         </a>
         <a
-          href="https://calendly.com/aidan-archpointlabs/30min"
+          href="https://calendly.com/matt-archpointlabs/30min"
           target="_blank"
           rel="noopener noreferrer"
           className="absolute top-6 right-6 text-xl font-bold text-white drop-shadow-lg"
