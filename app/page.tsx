@@ -5,13 +5,11 @@ import { motion } from "motion/react"
 import { ArrowUp } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { Figtree } from "next/font/google"
 import type { Components } from "react-markdown"
 import PortfolioModal from "@/components/portfolio-modal"
 import type { PortfolioItem } from "@/components/portfolio-grid"
 import { ExternalLink } from "lucide-react"
-
-const figtree = Figtree({ subsets: ["latin"] })
+import Image from "next/image"
 
 const SUBHEAD =
  "We develop custom software solutions, like apps, websites and AI agents that fully unlock the potential of your business. Chat with Milo, our AI Assistant, to discover what Archpoint Labs can do for you."
@@ -92,9 +90,10 @@ export default function Chat() {
     "I'm interested in custom software development"
   ]
 
-  function scrollToBottom(el: HTMLElement, behavior: ScrollBehavior = "auto") {
-  el.scrollTo({ top: el.scrollHeight, behavior })
-}
+  // Utility function for manual scroll-to-bottom if needed
+  // function scrollToBottom(el: HTMLElement, behavior: ScrollBehavior = "auto") {
+  //   el.scrollTo({ top: el.scrollHeight, behavior })
+  // }
 
 type AutoScrollMode = "bottom" | "anchor"
 
@@ -110,8 +109,8 @@ function useAutoScroll(
   const mode = opts?.mode ?? "bottom"
   const pad = opts?.pad ?? 8
 
-  const [isAtBottom, setIsAtBottom] = useState(true)
-  const [hasQueuedNew, setHasQueuedNew] = useState(false)
+  const [_isAtBottom, setIsAtBottom] = useState(true)
+  const [_hasQueuedNew, setHasQueuedNew] = useState(false)
 
   useEffect(() => {
     const el = ref.current
@@ -134,7 +133,7 @@ function useAutoScroll(
       const el = ref.current
 
       if (mode === "bottom") {
-        if (isAtBottom) el.scrollTo({ top: el.scrollHeight })
+        if (_isAtBottom) el.scrollTo({ top: el.scrollHeight })
       } else if (mode === "anchor" && opts?.anchorEl) {
         const anchor = opts.anchorEl()
         if (!anchor) return
@@ -160,7 +159,7 @@ function useAutoScroll(
     if (!el) return
 
     if (mode === "bottom") {
-      if (isAtBottom) {
+      if (_isAtBottom) {
         el.scrollTo({ top: el.scrollHeight })
       } else {
         setHasQueuedNew(true)
@@ -188,7 +187,7 @@ function useAutoScroll(
     setHasQueuedNew(false)
   }
 
-  return { isAtBottom, hasQueuedNew, jumpToBottom }
+  return { isAtBottom: _isAtBottom, hasQueuedNew: _hasQueuedNew, jumpToBottom }
 }
 
   // figure out last msg + previous user msg
@@ -201,7 +200,7 @@ for (let i = messages.length - 2; i >= 0; i--) {
 const mode: "bottom" | "anchor" =
   last?.role === "assistant" ? "anchor" : "bottom"
 
-const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
+const { jumpToBottom } = useAutoScroll(
   scrollContainerRef,
   // trigger on any new message and loading state
   [messages.length, isLoading],
@@ -364,7 +363,7 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
   }, [mounted, isMobile, isMessages])
 
   return (
-    <main className={`${figtree.className} min-h-screen w-full`}>
+    <main className="min-h-screen w-full">
 
       <div aria-hidden className="fixed inset-0 z-0 bg-[url('/new-hero-bro.png')] bg-cover bg-center" />
       <div
@@ -374,9 +373,11 @@ const { isAtBottom, hasQueuedNew, jumpToBottom } = useAutoScroll(
           href="https://archpointlabs.com"
           className="absolute top-6 left-6 drop-shadow-lg z-50"
         >
-          <img
+          <Image
             src="/logos/aidans-try-for-mobile-logo.svg"
             alt="Archpoint Labs Logo"
+            width={40}
+            height={40}
             className="h-10 w-auto"
           />
         </a>
