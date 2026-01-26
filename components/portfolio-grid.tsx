@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import PortfolioCard from "./portfolio-card"
-import PortfolioModal from "./portfolio-modal"
+// Note: These imports are kept commented out as the component code below is also commented.
+// They would be needed if the PortfolioGrid component is re-enabled.
+// import { useState } from "react"
+// import PortfolioCard from "./portfolio-card"
+// import PortfolioModal from "./portfolio-modal"
 
 export interface PortfolioItem {
   id: string

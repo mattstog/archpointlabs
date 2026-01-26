@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 const sql = neon(process.env.POSTGRES_URL!)
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     // Fetch all conversations ordered by most recent first (by ID since created_at may not exist)
     const conversations = await sql`

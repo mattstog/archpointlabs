@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next"
 
@@ -11,11 +11,6 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo-apl-favicon.svg",
     apple: "/sharing/apple-touch-icon-apl.png",
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
   },
   // ✅ Explicit canonical
   alternates: {
@@ -42,6 +37,12 @@ export const metadata: Metadata = {
   other: {
     "mobile-web-app-capable": "yes",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
