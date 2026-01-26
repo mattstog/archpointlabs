@@ -6,6 +6,7 @@ export const runtime = 'nodejs'
 
 const sql = neon(process.env.POSTGRES_URL!)
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_req: NextRequest) {
   try {
     // Fetch all conversations ordered by most recent first (by ID since created_at may not exist)

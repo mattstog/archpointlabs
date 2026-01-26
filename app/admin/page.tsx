@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, MessageSquare, User, Clock, Mail, Globe } from 'lucide-react'
+import { Calendar, MessageSquare, User, Clock, Globe } from 'lucide-react'
 
 type Message = {
   role: 'user' | 'assistant' | 'system'
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
         minute: '2-digit',
         hour12: true
       }).format(date)
-    } catch (error) {
+    } catch {
       return 'Invalid date'
     }
   }
