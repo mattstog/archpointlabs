@@ -300,13 +300,13 @@ export default function Chat() {
         aria-hidden
         className="fixed pointer-events-none z-0"
         style={{
-          bottom: "-120px",
-          left: "-120px",
+          bottom: "-110px",
+          left: "-110px",
           width: "640px",
           height: "640px",
-          opacity: 0.13,
-          maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 50%)",
-          WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 50%)",
+          opacity: 0.33,
+          maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 90%)",
+          WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 90%)",
         }}
       >
         <img src="/logos/AP Icon -White.svg" alt="" className="w-full h-full object-contain" />
