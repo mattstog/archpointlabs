@@ -471,7 +471,7 @@ export default function Chat() {
         </nav>
 
         {/* Headline & Subheadline */}
-        <div className="absolute inset-x-0 lg:inset-x-auto top-24 lg:top-[30%] lg:left-24 lg:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto lg:mx-0">
+        <div className="absolute inset-x-0 lg:inset-x-auto top-[28%] lg:top-[30%] lg:left-24 lg:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto lg:mx-0">
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
             Creating <br /> What&apos;s Next.
           </h1>
@@ -484,8 +484,8 @@ export default function Chat() {
           key={mounted && isMobile ? "m" : "d"}
           className="absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
           style={!isMobile ? { top: hasMessages ? "10%" : "30%", marginLeft: "21.25rem", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? "55svh" : "-40dvh", x: "-50%" }}
-          animate={{ y: isMobile ? "55svh" : 0, x: "-50%" }}
+          initial={{ y: isMobile ? "63svh" : "-40dvh", x: "-50%" }}
+          animate={{ y: isMobile ? "63svh" : 0, x: "-50%" }}
           transition={{
             y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 2, ease: "linear" },
             opacity: { delay: 1.5, duration: 0.4 },
@@ -578,7 +578,7 @@ export default function Chat() {
                   animate={showLabel ? { opacity: 1, y: -12 } : { opacity: 0, y: 50 }}
                   transition={{ type: "spring", bounce: 0.2, duration: 1 }}
                 >
-                  Hey, I&apos;m Milo! What do you want to learn about Archpoint?
+                  I&apos;m Milo. Let&apos;s talk about what Archpoint can do for you.
                 </motion.div>
               )}
 
