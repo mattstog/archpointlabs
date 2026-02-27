@@ -11,7 +11,7 @@ import type { PortfolioItem } from "@/components/portfolio-grid"
 import { ExternalLink } from "lucide-react"
 
 const SUBHEAD =
-  "We develop custom software solutions, like apps, websites and AI agents that fully unlock the potential of your business. Chat with Milo, our AI Assistant, to discover what Archpoint Labs can do for you."
+  "We develop custom software solutions, like apps, automations and AI agents that fully unlock the potential of your business. Chat with Milo, our AI Assistant, to discover what Archpoint Labs can do for you."
 
 type Message = {
   id: string
@@ -284,7 +284,7 @@ export default function Chat() {
   }, [mounted, isMobile, hasMessages])
 
   return (
-    <main className="min-h-screen w-full">
+    <main className="min-h-screen w-full overflow-x-hidden">
 
       {/* Clean brand background */}
       <div
@@ -352,10 +352,10 @@ export default function Chat() {
         {/* Chat wrapper */}
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
-          className={`absolute top-0 lg:top-[30%] left-1/2 -translate-x-1/2 isolate flex flex-col items-center justify-center ${!isMobile ? "ml-85" : ""} w-full max-w-[672px] px-4 ${(isMobile && hasMessages) ? "py-4" : ""}`}
+          className={`absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center ${!isMobile ? "ml-85" : ""} w-full max-w-[672px] px-4 ${(isMobile && hasMessages) ? "py-4" : ""}`}
           style={!isMobile ? { top: hasMessages ? "10%" : "30%", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? "120svh" : "-40dvh" }}
-          animate={{ y: isMobile ? "55svh" : 0 }}
+          initial={{ y: isMobile ? "120svh" : "-40dvh", x: "-50%" }}
+          animate={{ y: isMobile ? "55svh" : 0, x: "-50%" }}
           transition={{
             y: isMobile ? { delay: 1.2, duration: 3, ease: "linear" } : { delay: 1.5, duration: 2, ease: "linear" },
             opacity: { delay: 1.5, duration: 0.4 },
@@ -419,7 +419,7 @@ export default function Chat() {
           {/* Milo label */}
           {!hasMessages && (
             <motion.div
-              className="lg:min-w-[672px] md:w-full sm:w-full text-center -z-10 pointer-events-none font-bold text-2xl text-white"
+              className="w-full text-center -z-10 pointer-events-none font-bold text-2xl text-white px-6"
               initial={false}
               animate={showLabel ? { opacity: 1, y: -12 } : { opacity: 0, y: 50 }}
               transition={{ type: "spring", bounce: 0.2, duration: 1 }}
@@ -433,7 +433,7 @@ export default function Chat() {
             className="relative z-10 mb-0 lg:mb-2 rounded-full shadow-2xl"
             style={{ border: "1px solid rgba(255,255,255,0.15)" }}
             initial={false}
-            animate={arrived ? { width: isMobile ? 380 : 672, height: 64 } : { width: 48, height: 48 }}
+            animate={arrived ? { width: isMobile ? "calc(100vw - 32px)" : 672, height: 64 } : { width: 48, height: 48 }}
             transition={{
               width: { type: "spring", bounce: 0.2, duration: 1.3 },
               height: { type: "spring", bounce: 0.2, duration: 1.3 },
