@@ -292,8 +292,8 @@ export default function Chat() {
         className="fixed inset-0 z-0"
         style={{
           background:
-            "radial-gradient(ellipse at 20% 0%, rgba(239,56,46,0.10) 0%, transparent 55%), " +
-            "radial-gradient(ellipse at 85% 100%, rgba(239,56,46,0.06) 0%, transparent 45%), " +
+            "radial-gradient(ellipse at 20% 0%, rgba(239,56,46,0.22) 0%, transparent 55%), " +
+            "radial-gradient(ellipse at 85% 100%, rgba(239,56,46,0.14) 0%, transparent 45%), " +
             "#2e353e",
         }}
       />
@@ -307,7 +307,7 @@ export default function Chat() {
           left: "-110px",
           width: "640px",
           height: "640px",
-          opacity: 0.66,
+          opacity: 0.5,
           maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 90%)",
           WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 90%)",
         }}
