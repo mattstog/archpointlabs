@@ -244,6 +244,9 @@ export default function Chat() {
 
   const markdownComponents: Components = {
     p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+    ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1.5">{children}</ol>,
+    ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>,
+    li: ({ children }) => <li className="leading-relaxed [&>p]:mb-0">{children}</li>,
     a: ({ href, children }) => {
       const isPortfolioLink = href && portfolioItems.some(i => i.liveUrl === href)
       const base =
@@ -304,7 +307,7 @@ export default function Chat() {
           left: "-110px",
           width: "640px",
           height: "640px",
-          opacity: 0.33,
+          opacity: 0.66,
           maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 90%)",
           WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 90%)",
         }}
