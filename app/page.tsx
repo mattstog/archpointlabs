@@ -2,7 +2,7 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { motion } from "motion/react"
-import { ArrowUp } from "lucide-react"
+import { ArrowUp, X, MessageCircle } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import type { Components } from "react-markdown"
@@ -65,6 +65,7 @@ export default function Chat() {
   const [usedExamples, setUsedExamples] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
+  const [mobileOverlayOpen, setMobileOverlayOpen] = useState(false)
 
   useEffect(() => setMounted(true), [])
 
@@ -230,7 +231,11 @@ export default function Chat() {
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (!canChat) return
-    if (input.trim() && !isLoading) { sendMessage(input); setInput("") }
+    if (input.trim() && !isLoading) {
+      sendMessage(input)
+      setInput("")
+      if (isMobile) setMobileOverlayOpen(true)
+    }
   }
 
   const handleExampleClick = (text: string) => {
@@ -272,6 +277,11 @@ export default function Chat() {
   const hasMessages = messages.length > 0
   const isMobile = useIsMobile()
   const examplesToUse = isMobile ? examplesForMobile : examples
+
+  // Auto-open overlay when chat starts on mobile; stays open by default
+  useEffect(() => {
+    if (isMobile && hasMessages) setMobileOverlayOpen(true)
+  }, [isMobile, hasMessages])
 
   return (
     <main className="min-h-screen w-full overflow-x-hidden">
@@ -315,7 +325,7 @@ export default function Chat() {
       {/* ══ MOBILE CHAT OVERLAY ══
           Full-screen panel that appears once the user starts chatting.
           Covers the hero entirely — chat + fixed input at bottom. */}
-      {isMobile && hasMessages && (
+      {isMobile && hasMessages && mobileOverlayOpen && (
         <motion.div
           className="fixed inset-0 z-[60] flex flex-col"
           initial={{ opacity: 0 }}
@@ -339,15 +349,24 @@ export default function Chat() {
             <a href="https://archpointlabs.com" className="flex items-center">
               <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-14 w-auto" />
             </a>
-            <a
-              href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-1.5 rounded-full text-xs font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: "#ef382e", letterSpacing: "0.01em" }}
-            >
-              Book a Call
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-1.5 rounded-full text-xs font-semibold text-white transition-all hover:opacity-90"
+                style={{ background: "#ef382e", letterSpacing: "0.01em" }}
+              >
+                Book a Call
+              </a>
+              <button
+                onClick={() => setMobileOverlayOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                aria-label="Minimize chat"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Scrollable messages */}
@@ -525,6 +544,21 @@ export default function Chat() {
                 )}
               </div>
             </motion.div>
+          )}
+
+          {/* ── MOBILE: resume chat button when overlay is minimized ── */}
+          {isMobile && hasMessages && !mobileOverlayOpen && (
+            <motion.button
+              className="flex items-center gap-2 px-6 py-3 rounded-full text-white text-sm font-semibold shadow-xl"
+              style={{ background: "#ef382e" }}
+              onClick={() => setMobileOverlayOpen(true)}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <MessageCircle className="w-4 h-4" />
+              Continue chatting
+            </motion.button>
           )}
 
           {/* ── MOBILE INTRO: label + orb + chips rise together from below ── */}
