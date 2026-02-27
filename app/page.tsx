@@ -317,7 +317,7 @@ export default function Chat() {
           Covers the hero entirely — chat + fixed input at bottom. */}
       {isMobile && hasMessages && (
         <motion.div
-          className="fixed inset-0 z-40 flex flex-col"
+          className="fixed inset-0 z-[60] flex flex-col"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.25 }}
@@ -451,8 +451,8 @@ export default function Chat() {
           </a>
         </nav>
 
-        {/* Headline & Subheadline — desktop only */}
-        <div className="hidden lg:block absolute inset-x-0 lg:inset-x-auto top-24 lg:top-[30%] lg:left-24 lg:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto lg:mx-0">
+        {/* Headline & Subheadline */}
+        <div className="absolute inset-x-0 lg:inset-x-auto top-24 lg:top-[30%] lg:left-24 lg:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto lg:mx-0">
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
             Creating <br /> What&apos;s Next.
           </h1>
