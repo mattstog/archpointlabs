@@ -484,8 +484,8 @@ export default function Chat() {
           key={mounted && isMobile ? "m" : "d"}
           className="absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
           style={!isMobile ? { top: hasMessages ? "10%" : "30%", marginLeft: "21.25rem", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? "50svh" : "-40dvh", x: "-50%" }}
-          animate={{ y: isMobile ? "50svh" : 0, x: "-50%" }}
+          initial={{ y: isMobile ? "40svh" : "-40dvh", x: "-50%" }}
+          animate={{ y: isMobile ? "40svh" : 0, x: "-50%" }}
           transition={{
             y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 2, ease: "linear" },
             opacity: { delay: 1.5, duration: 0.4 },
