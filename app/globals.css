@@ -1,40 +1,41 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
-  --background: linear-gradient(to bottom, #4a87d5, #6ea7e6);
-  --foreground: #171717;
+  --brand-dark: #2e353e;
+  --brand-red: #ef382e;
+  --background: #2e353e;
+  --foreground: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-figtree);
+  --font-mono: var(--font-geist-mono);
 }
 
 html, body {
   min-height: 100%;
-  background-color: #3f80d0; /* fallback for bars */
-  background-image: linear-gradient(to bottom, #4a87d5, #6ea7e6);
-  background-attachment: scroll; /* avoid iOS white flash */
+  background-color: #2e353e;
 }
 
 .scrollarea {
-  scrollbar-width: thin;                        /* Firefox */
-  scrollbar-color: rgba(0,0,0,0.6) transparent; /* black pill on no track */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
 }
 
 .scrollarea::-webkit-scrollbar {
-  width: 8px;                                   /* thin */
+  width: 6px;
 }
 .scrollarea::-webkit-scrollbar-track {
-  background: transparent;                      /* removes white track */
+  background: transparent;
 }
 .scrollarea::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.6);                  /* black pill */
-  border-radius: 9999px;                        /* fully rounded */
+  background: rgba(255,255,255,0.2);
+  border-radius: 9999px;
+}
+.scrollarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.35);
 }
 
 /* Landscape orientation overlay for mobile devices */
