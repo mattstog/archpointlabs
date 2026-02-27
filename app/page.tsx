@@ -71,6 +71,12 @@ export default function Chat() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
+  // Mobile layout refs for dynamic height measurement
+  const mobileHeaderRef = useRef<HTMLDivElement>(null)
+  const mobileInputRef = useRef<HTMLDivElement>(null)
+  const [mobileHeaderH, setMobileHeaderH] = useState(260)
+  const [mobileInputH, setMobileInputH] = useState(110)
+
   const examples = [
     "Can you help with AI implementation?",
     "What makes Archpoint Labs different?",
@@ -200,6 +206,42 @@ export default function Chat() {
     return isMobile
   }
 
+  const isMobile = useIsMobile()
+  const hasMessages = messages.length > 0
+
+  // Mobile: measure header + input heights via ResizeObserver
+  useEffect(() => {
+    if (!mounted || !isMobile) return
+    const update = () => {
+      if (mobileHeaderRef.current) setMobileHeaderH(mobileHeaderRef.current.offsetHeight)
+      if (mobileInputRef.current) setMobileInputH(mobileInputRef.current.offsetHeight)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    if (mobileHeaderRef.current) ro.observe(mobileHeaderRef.current)
+    if (mobileInputRef.current) ro.observe(mobileInputRef.current)
+    return () => ro.disconnect()
+  }, [mounted, isMobile])
+
+  // Re-measure after hero collapses (animation takes ~450ms)
+  useEffect(() => {
+    if (!isMobile) return
+    const t = setTimeout(() => {
+      if (mobileHeaderRef.current) setMobileHeaderH(mobileHeaderRef.current.offsetHeight)
+    }, 480)
+    return () => clearTimeout(t)
+  }, [hasMessages, isMobile])
+
+  // Mobile: trigger orb expansion after a short delay (replaces desktop onAnimationComplete)
+  useEffect(() => {
+    if (!mounted || !isMobile) return
+    setArrived(false)
+    setShowLabel(false)
+    setShowExamples(false)
+    const t = setTimeout(() => setArrived(true), 700)
+    return () => clearTimeout(t)
+  }, [mounted, isMobile])
+
   const sendMessage = async (text: string) => {
     if (!canChat) return
     const userMessage: Message = { id: Date.now().toString(), role: "user", content: text }
@@ -269,24 +311,58 @@ export default function Chat() {
     },
   }
 
-  const hasMessages = messages.length > 0
-  const isMobile = useIsMobile()
-  const examplesToUse = isMobile ? examplesForMobile : examples
-  const MOBILE_SCROLL_BY_PX = 360
-  const didMobileScrollRef = useRef(false)
+  // Shared message bubble renderer (used in both layouts)
+  const renderMessages = () => (
+    <div className="space-y-4">
+      {messages.map((m) => {
+        const isUser = m.role === "user"
+        return (
+          <div
+            key={m.id}
+            ref={(el) => { if (el) messageRefs.current.set(m.id, el); else messageRefs.current.delete(m.id) }}
+            className={`flex ${isUser ? "justify-end" : "justify-start"} text-left`}
+          >
+            <div
+              className={isUser
+                ? "text-white rounded-2xl px-4 py-2 inline-flex items-center text-left whitespace-pre-wrap break-words max-w-[80%]"
+                : "text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left break-words max-w-[99%] bg-white/0"}
+              style={isUser ? { background: "#ef382e" } : {}}
+            >
+              {!isUser && <div className="font-semibold text-white/60 text-sm">Milo</div>}
+              <div className="leading-relaxed w-full">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {m.content}
+                </ReactMarkdown>
+              </div>
+            </div>
+          </div>
+        )
+      })}
+      {isLoading && (
+        <div className="flex justify-start text-left">
+          <div className="text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start">
+            <div className="font-semibold text-white/60 text-sm">Milo</div>
+            <div className="flex items-center text-white/80">
+              <span>Thinking</span>
+              <span className="inline-flex ml-1">
+                {[0, 0.3, 0.6].map((delay) => (
+                  <motion.span key={delay} animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity, delay }}>.</motion.span>
+                ))}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 
-  useEffect(() => {
-    if (!mounted) return
-    if (isMobile && hasMessages && !didMobileScrollRef.current) {
-      didMobileScrollRef.current = true
-      window.requestAnimationFrame(() => window.scrollBy({ top: MOBILE_SCROLL_BY_PX, behavior: "smooth" }))
-    }
-  }, [mounted, isMobile, hasMessages])
+  // Mobile orb width: viewport minus padding, capped
+  const mobileOrbWidth = mounted ? Math.min(window.innerWidth - 80, 300) : 260
 
   return (
     <main className="min-h-screen w-full overflow-x-hidden">
 
-      {/* Clean brand background */}
+      {/* Shared: brand background */}
       <div
         aria-hidden
         className="fixed inset-0 z-0"
@@ -298,7 +374,7 @@ export default function Chat() {
         }}
       />
 
-      {/* Faint AP icon watermark — overflowing off bottom-left corner */}
+      {/* Shared: AP icon watermark */}
       <div
         aria-hidden
         className="fixed pointer-events-none z-0"
@@ -315,179 +391,284 @@ export default function Chat() {
         <img src="/logos/AP Icon -White.svg" alt="" className="w-full h-full object-contain" />
       </div>
 
-      {/* Subtle top accent line */}
+      {/* Shared: top accent line */}
       <div
         aria-hidden
         className="fixed top-0 inset-x-0 z-10 h-[3px]"
         style={{ background: "linear-gradient(to right, transparent, #ef382e 40%, #ef382e 60%, transparent)" }}
       />
 
-      <div className="w-full min-h-screen relative">
-
-        {/* Navigation */}
-        <nav className="absolute top-0 inset-x-0 z-50 flex items-center justify-between px-6 pt-6 pb-4">
-          <a href="https://archpointlabs.com" className="flex items-center">
-            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-28 w-auto" />
-          </a>
-          <a
-            href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-5 py-2 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90"
-            style={{ background: "#ef382e", letterSpacing: "0.01em" }}
-          >
-            Book a Call
-          </a>
-        </nav>
-
-        {/* Headline & Subheadline */}
-        <div className="absolute inset-x-0 lg:inset-x-auto top-24 lg:top-[30%] lg:left-24 lg:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto lg:mx-0">
-          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
-            Creating <br /> What&apos;s Next.
-          </h1>
-          <div className="mt-3 mb-4 lg:ml-0 mx-auto w-12 h-[3px] rounded-full" style={{ background: "#ef382e" }} />
-          <p className="text-base px-6 lg:px-0 leading-relaxed text-white/70">{SUBHEAD}</p>
-        </div>
-
-        {/* Chat wrapper */}
-        <motion.div
-          key={mounted && isMobile ? "m" : "d"}
-          className={`absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center ${!isMobile ? "ml-85" : ""} w-full max-w-[672px] px-4 ${(isMobile && hasMessages) ? "py-4" : ""}`}
-          style={!isMobile ? { top: hasMessages ? "10%" : "30%", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? "120svh" : "-40dvh", x: "-50%" }}
-          animate={{ y: isMobile ? "55svh" : 0, x: "-50%" }}
-          transition={{
-            y: isMobile ? { delay: 1.2, duration: 3, ease: "linear" } : { delay: 1.5, duration: 2, ease: "linear" },
-            opacity: { delay: 1.5, duration: 0.4 },
-          }}
-          onAnimationComplete={() => setArrived(true)}
-        >
-          {/* Chat messages */}
-          {hasMessages && (
-            <motion.div
-              ref={scrollContainerRef}
-              className="scrollarea mb-8 w-full h-[50vh] rounded-2xl p-6 overflow-y-auto scroll-smooth border"
-              style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", borderColor: "rgba(255,255,255,0.10)" }}
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
-            >
-              <div className="space-y-4">
-                {messages.map((m) => {
-                  const isUser = m.role === "user"
-                  return (
-                    <div
-                      key={m.id}
-                      ref={(el) => { if (el) messageRefs.current.set(m.id, el); else messageRefs.current.delete(m.id) }}
-                      className={`flex ${isUser ? "justify-end" : "justify-start"} text-left`}
-                    >
-                      <div
-                        className={isUser
-                          ? "-mr-2 text-white rounded-2xl px-4 py-2 inline-flex items-center justify-center text-left whitespace-pre-wrap break-words max-w-[75%]"
-                          : "-ml-4 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left break-words max-w-[99%] bg-white/0"}
-                        style={isUser ? { background: "#ef382e" } : {}}
-                      >
-                        {!isUser && <div className="font-semibold text-white/60 text-sm">Milo</div>}
-                        <div className="leading-relaxed w-full">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                            {m.content}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-                {isLoading && (
-                  <div className="flex justify-start text-left">
-                    <div className="-ml-4 text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start">
-                      <div className="font-semibold text-white/60 text-sm">Milo</div>
-                      <div className="flex items-center text-white/80">
-                        <span>Thinking</span>
-                        <span className="inline-flex ml-1">
-                          {[0, 0.3, 0.6].map((delay) => (
-                            <motion.span key={delay} animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity, delay }}>.</motion.span>
-                          ))}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Milo label */}
-          {!hasMessages && (
-            <motion.div
-              className="w-full text-center -z-10 pointer-events-none font-bold text-2xl text-white px-6"
-              initial={false}
-              animate={showLabel ? { opacity: 1, y: -12 } : { opacity: 0, y: 50 }}
-              transition={{ type: "spring", bounce: 0.2, duration: 1 }}
-            >
-              Hey, I&apos;m Milo! What do you want to learn about Archpoint?
-            </motion.div>
-          )}
-
-          {/* Input orb */}
-          <motion.div
-            className="relative z-10 mb-0 lg:mb-2 rounded-full shadow-2xl"
-            style={{ border: "1px solid rgba(255,255,255,0.15)" }}
-            initial={false}
-            animate={arrived ? { width: isMobile ? "calc(100vw - 32px)" : 672, height: 64 } : { width: 48, height: 48 }}
-            transition={{
-              width: { type: "spring", bounce: 0.2, duration: 1.3 },
-              height: { type: "spring", bounce: 0.2, duration: 1.3 },
-            }}
-            onAnimationComplete={() => {
-              setTimeout(() => setShowLabel(true), 200)
-              setTimeout(() => setShowExamples(true), 1200)
-            }}
-          >
-            <div className="relative h-full w-full">
-              <div className="absolute inset-0 rounded-full z-0" style={{ background: "#ffffff" }}>
-                <motion.form className="absolute inset-0 z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSubmit}>
-                  <input
-                    className={`h-full w-full rounded-full px-5 bg-transparent pr-20 focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 ${arrived ? "" : "pointer-events-none"}`}
-                    value={input}
-                    placeholder={arrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached for this session") : ""}
-                    onChange={(e) => setInput(e.currentTarget.value)}
-                    disabled={isLoading || !canChat}
-                  />
-                  {input && arrived && !isLoading && canChat && (
-                    <button
-                      type="button"
-                      onClick={handleSubmit}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:opacity-90 hover:cursor-pointer"
-                      style={{ background: "#ef382e" }}
-                    >
-                      <ArrowUp className="w-4 h-4 text-white" />
-                    </button>
-                  )}
-                </motion.form>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Example chips */}
-          <motion.ul className="mt-5 flex flex-wrap gap-3 items-center justify-center w-full">
-            {examplesToUse.filter(e => !usedExamples.includes(e)).map((t, i) => (
-              <motion.li
-                key={t}
-                initial={false}
-                animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5, delay: i * 0.3 }}
-                onClick={() => { if (!isLoading && canChat) handleExampleClick(t) }}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium text-white/80 transition-colors ${!canChat ? "cursor-not-allowed opacity-40" : isLoading ? "cursor-wait opacity-60" : "cursor-pointer hover:text-white"}`}
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
-                title={!canChat ? "Chat limit reached for this session" : undefined}
+      {/* ── MOBILE LAYOUT ── */}
+      {mounted && isMobile && (
+        <>
+          {/* Fixed header: nav + collapsible hero */}
+          <div ref={mobileHeaderRef} className="fixed top-0 inset-x-0 z-50">
+            {/* Nav */}
+            <nav className="flex items-center justify-between px-5 pt-5 pb-3">
+              <a href="https://archpointlabs.com" className="flex items-center">
+                <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-14 w-auto" />
+              </a>
+              <a
+                href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-1.5 rounded-full text-xs font-semibold text-white transition-all hover:opacity-90"
+                style={{ background: "#ef382e" }}
               >
-                {t}
-              </motion.li>
-            ))}
-          </motion.ul>
-        </motion.div>
-      </div>
+                Book a Call
+              </a>
+            </nav>
+
+            {/* Hero — collapses when chat starts (iOS large-title effect) */}
+            <motion.div
+              className="overflow-hidden"
+              initial={false}
+              animate={hasMessages ? { height: 0, opacity: 0 } : { height: "auto", opacity: 1 }}
+              transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="px-6 pb-5 text-white">
+                <h1 className="text-3xl font-extrabold leading-tight tracking-tight">
+                  Creating <br /> What&apos;s Next.
+                </h1>
+                <div className="mt-3 mb-3 w-10 h-[3px] rounded-full" style={{ background: "#ef382e" }} />
+                <p className="text-sm leading-relaxed text-white/70">
+                  Custom software, apps &amp; AI agents that unlock your business potential.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Scrollable messages — pinned between header and input */}
+          {hasMessages && (
+            <div
+              ref={scrollContainerRef}
+              className="scrollarea fixed inset-x-0 z-30 overflow-y-auto px-4 py-4"
+              style={{
+                top: mobileHeaderH,
+                bottom: mobileInputH,
+                transition: "top 0.45s cubic-bezier(0.4,0,0.2,1)",
+              }}
+            >
+              {renderMessages()}
+            </div>
+          )}
+
+          {/* Milo greeting — shown when no messages, above input */}
+          {!hasMessages && (
+            <div
+              className="fixed inset-x-0 z-30 flex items-end justify-center pb-6 pointer-events-none"
+              style={{ top: mobileHeaderH, bottom: mobileInputH }}
+            >
+              <motion.div
+                className="text-center font-bold text-xl text-white px-8"
+                initial={false}
+                animate={showLabel ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+                transition={{ type: "spring", bounce: 0.2, duration: 1 }}
+              >
+                Hey, I&apos;m Milo! What do you want to learn about Archpoint?
+              </motion.div>
+            </div>
+          )}
+
+          {/* Fixed bottom: example chips + input orb */}
+          <div ref={mobileInputRef} className="fixed bottom-0 inset-x-0 z-50 px-4 pb-8 pt-2">
+            {/* Example chips — hidden once chatting */}
+            {!hasMessages && (
+              <motion.ul className="flex flex-wrap gap-2 mb-3 justify-center">
+                {examplesForMobile.filter(e => !usedExamples.includes(e)).map((t, i) => (
+                  <motion.li
+                    key={t}
+                    initial={false}
+                    animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5, delay: i * 0.2 }}
+                    onClick={() => { if (!isLoading && canChat) handleExampleClick(t) }}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium text-white/80 transition-colors ${!canChat ? "cursor-not-allowed opacity-40" : isLoading ? "cursor-wait opacity-60" : "cursor-pointer hover:text-white"}`}
+                    style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+                  >
+                    {t}
+                  </motion.li>
+                ))}
+              </motion.ul>
+            )}
+
+            {/* Input orb — dot slides up, then expands */}
+            <div className="flex justify-center">
+              <motion.div
+                className="relative rounded-full shadow-2xl"
+                style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+                initial={{ opacity: 0, y: 32 }}
+                animate={
+                  arrived
+                    ? { opacity: 1, y: 0, width: mobileOrbWidth, height: 52 }
+                    : { opacity: 1, y: 0, width: 48, height: 48 }
+                }
+                transition={{
+                  opacity: { duration: 0.4, delay: 0.2 },
+                  y: { duration: 0.5, delay: 0.2, ease: "easeOut" },
+                  width: { type: "spring", bounce: 0.2, duration: 1.3 },
+                  height: { type: "spring", bounce: 0.2, duration: 1.3 },
+                }}
+                onAnimationComplete={() => {
+                  if (!arrived) return
+                  setTimeout(() => setShowLabel(true), 200)
+                  setTimeout(() => setShowExamples(true), 900)
+                }}
+              >
+                <div className="absolute inset-0 rounded-full bg-white">
+                  <form onSubmit={handleSubmit} className="absolute inset-0">
+                    <input
+                      className={`h-full w-full rounded-full px-5 bg-transparent pr-14 focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 text-sm ${arrived ? "" : "pointer-events-none"}`}
+                      value={input}
+                      placeholder={arrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached") : ""}
+                      onChange={(e) => setInput(e.currentTarget.value)}
+                      disabled={isLoading || !canChat}
+                    />
+                    {input && arrived && !isLoading && canChat && (
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:opacity-90"
+                        style={{ background: "#ef382e" }}
+                      >
+                        <ArrowUp className="w-3.5 h-3.5 text-white" />
+                      </button>
+                    )}
+                  </form>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── DESKTOP LAYOUT ── */}
+      {(!mounted || !isMobile) && (
+        <div className="w-full min-h-screen relative">
+
+          {/* Navigation */}
+          <nav className="absolute top-0 inset-x-0 z-50 flex items-center justify-between px-6 pt-6 pb-4">
+            <a href="https://archpointlabs.com" className="flex items-center">
+              <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-28 w-auto" />
+            </a>
+            <a
+              href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-5 py-2 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: "#ef382e", letterSpacing: "0.01em" }}
+            >
+              Book a Call
+            </a>
+          </nav>
+
+          {/* Headline & Subheadline */}
+          <div className="absolute inset-x-0 lg:inset-x-auto top-24 lg:top-[30%] lg:left-24 lg:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto lg:mx-0">
+            <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+              Creating <br /> What&apos;s Next.
+            </h1>
+            <div className="mt-3 mb-4 lg:ml-0 mx-auto w-12 h-[3px] rounded-full" style={{ background: "#ef382e" }} />
+            <p className="text-base px-6 lg:px-0 leading-relaxed text-white/70">{SUBHEAD}</p>
+          </div>
+
+          {/* Chat panel */}
+          <motion.div
+            className="absolute top-0 lg:top-[30%] left-1/2 ml-85 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
+            style={{ top: hasMessages ? "10%" : "30%", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" }}
+            initial={{ y: "-40dvh", x: "-50%" }}
+            animate={{ y: 0, x: "-50%" }}
+            transition={{
+              y: { delay: 1.5, duration: 2, ease: "linear" },
+              opacity: { delay: 1.5, duration: 0.4 },
+            }}
+            onAnimationComplete={() => setArrived(true)}
+          >
+            {/* Chat messages */}
+            {hasMessages && (
+              <motion.div
+                ref={scrollContainerRef}
+                className="scrollarea mb-8 w-full h-[50vh] rounded-2xl p-6 overflow-y-auto scroll-smooth border"
+                style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", borderColor: "rgba(255,255,255,0.10)" }}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
+              >
+                {renderMessages()}
+              </motion.div>
+            )}
+
+            {/* Milo label */}
+            {!hasMessages && (
+              <motion.div
+                className="w-full text-center -z-10 pointer-events-none font-bold text-2xl text-white px-6"
+                initial={false}
+                animate={showLabel ? { opacity: 1, y: -12 } : { opacity: 0, y: 50 }}
+                transition={{ type: "spring", bounce: 0.2, duration: 1 }}
+              >
+                Hey, I&apos;m Milo! What do you want to learn about Archpoint?
+              </motion.div>
+            )}
+
+            {/* Input orb */}
+            <motion.div
+              className="relative z-10 mb-2 rounded-full shadow-2xl"
+              style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+              initial={false}
+              animate={arrived ? { width: 672, height: 64 } : { width: 48, height: 48 }}
+              transition={{
+                width: { type: "spring", bounce: 0.2, duration: 1.3 },
+                height: { type: "spring", bounce: 0.2, duration: 1.3 },
+              }}
+              onAnimationComplete={() => {
+                setTimeout(() => setShowLabel(true), 200)
+                setTimeout(() => setShowExamples(true), 1200)
+              }}
+            >
+              <div className="relative h-full w-full">
+                <div className="absolute inset-0 rounded-full z-0" style={{ background: "#ffffff" }}>
+                  <motion.form className="absolute inset-0 z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSubmit}>
+                    <input
+                      className={`h-full w-full rounded-full px-5 bg-transparent pr-20 focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 ${arrived ? "" : "pointer-events-none"}`}
+                      value={input}
+                      placeholder={arrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached for this session") : ""}
+                      onChange={(e) => setInput(e.currentTarget.value)}
+                      disabled={isLoading || !canChat}
+                    />
+                    {input && arrived && !isLoading && canChat && (
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:opacity-90 hover:cursor-pointer"
+                        style={{ background: "#ef382e" }}
+                      >
+                        <ArrowUp className="w-4 h-4 text-white" />
+                      </button>
+                    )}
+                  </motion.form>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Example chips */}
+            <motion.ul className="mt-5 flex flex-wrap gap-3 items-center justify-center w-full">
+              {examples.filter(e => !usedExamples.includes(e)).map((t, i) => (
+                <motion.li
+                  key={t}
+                  initial={false}
+                  animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5, delay: i * 0.3 }}
+                  onClick={() => { if (!isLoading && canChat) handleExampleClick(t) }}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium text-white/80 transition-colors ${!canChat ? "cursor-not-allowed opacity-40" : isLoading ? "cursor-wait opacity-60" : "cursor-pointer hover:text-white"}`}
+                  style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+                  title={!canChat ? "Chat limit reached for this session" : undefined}
+                >
+                  {t}
+                </motion.li>
+              ))}
+            </motion.ul>
+          </motion.div>
+        </div>
+      )}
 
       <PortfolioModal item={selectedItem} onClose={() => setSelectedItem(null)} isMobile={isMobile} />
       <style jsx global>{`
