@@ -272,16 +272,6 @@ export default function Chat() {
   const hasMessages = messages.length > 0
   const isMobile = useIsMobile()
   const examplesToUse = isMobile ? examplesForMobile : examples
-  const MOBILE_SCROLL_BY_PX = 360
-  const didMobileScrollRef = useRef(false)
-
-  useEffect(() => {
-    if (!mounted) return
-    if (isMobile && hasMessages && !didMobileScrollRef.current) {
-      didMobileScrollRef.current = true
-      window.requestAnimationFrame(() => window.scrollBy({ top: MOBILE_SCROLL_BY_PX, behavior: "smooth" }))
-    }
-  }, [mounted, isMobile, hasMessages])
 
   return (
     <main className="min-h-screen w-full overflow-x-hidden">
@@ -322,12 +312,133 @@ export default function Chat() {
         style={{ background: "linear-gradient(to right, transparent, #ef382e 40%, #ef382e 60%, transparent)" }}
       />
 
+      {/* ══ MOBILE CHAT OVERLAY ══
+          Full-screen panel that appears once the user starts chatting.
+          Covers the hero entirely — chat + fixed input at bottom. */}
+      {isMobile && hasMessages && (
+        <motion.div
+          className="fixed inset-0 z-40 flex flex-col"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          style={{ background: "#2e353e" }}
+        >
+          {/* Background gradient (same brand feel) */}
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse at 20% 0%, rgba(239,56,46,0.14) 0%, transparent 55%), " +
+                "radial-gradient(ellipse at 85% 100%, rgba(239,56,46,0.20) 0%, transparent 45%)",
+            }}
+          />
+
+          {/* Mini nav */}
+          <div className="relative z-10 flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-white/10">
+            <a href="https://archpointlabs.com" className="flex items-center">
+              <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-14 w-auto" />
+            </a>
+            <a
+              href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-1.5 rounded-full text-xs font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: "#ef382e", letterSpacing: "0.01em" }}
+            >
+              Book a Call
+            </a>
+          </div>
+
+          {/* Scrollable messages */}
+          <div
+            ref={scrollContainerRef}
+            className="relative z-10 flex-1 overflow-y-auto px-4 pt-4 pb-2 scrollarea"
+          >
+            <div className="space-y-4 pb-2">
+              {messages.map((m) => {
+                const isUser = m.role === "user"
+                return (
+                  <div
+                    key={m.id}
+                    ref={(el) => { if (el) messageRefs.current.set(m.id, el); else messageRefs.current.delete(m.id) }}
+                    className={`flex ${isUser ? "justify-end" : "justify-start"} text-left`}
+                  >
+                    <div
+                      className={isUser
+                        ? "text-white rounded-2xl px-4 py-2 inline-flex items-center justify-center text-left whitespace-pre-wrap break-words max-w-[80%]"
+                        : "text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start text-left break-words w-full bg-white/0"}
+                      style={isUser ? { background: "#ef382e" } : {}}
+                    >
+                      {!isUser && <div className="font-semibold text-white/60 text-sm">Milo</div>}
+                      <div className="leading-relaxed w-full">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              {isLoading && (
+                <div className="flex justify-start text-left">
+                  <div className="text-white rounded-2xl px-4 py-2 flex flex-col gap-1 items-start">
+                    <div className="font-semibold text-white/60 text-sm">Milo</div>
+                    <div className="flex items-center text-white/80">
+                      <span>Thinking</span>
+                      <span className="inline-flex ml-1">
+                        {[0, 0.3, 0.6].map((delay) => (
+                          <motion.span key={delay} animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity, delay }}>.</motion.span>
+                        ))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Fixed input at bottom */}
+          <div
+            className="relative z-10 flex-shrink-0 px-4 pt-2"
+            style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom, 12px) + 12px)" }}
+          >
+            {!canChat && (
+              <p className="text-center text-white/40 text-xs mb-2">Chat limit reached for this session</p>
+            )}
+            <form
+              onSubmit={handleSubmit}
+              className="flex items-center rounded-full overflow-hidden shadow-lg"
+              style={{ background: "#ffffff", height: 52 }}
+            >
+              <input
+                className="flex-1 h-full px-5 bg-transparent focus:outline-none text-[#2e353e] placeholder:text-[#2e353e]/40 text-base"
+                value={input}
+                placeholder={canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : ""}
+                onChange={(e) => setInput(e.currentTarget.value)}
+                disabled={isLoading || !canChat}
+              />
+              {input && !isLoading && canChat && (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="mr-2 w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:opacity-90"
+                  style={{ background: "#ef382e" }}
+                >
+                  <ArrowUp className="w-4 h-4 text-white" />
+                </button>
+              )}
+            </form>
+          </div>
+        </motion.div>
+      )}
+
       <div className="w-full min-h-screen relative">
 
         {/* Navigation */}
         <nav className="absolute top-0 inset-x-0 z-50 flex items-center justify-between px-6 pt-6 pb-4">
           <a href="https://archpointlabs.com" className="flex items-center">
-            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-28 w-auto" />
+            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-16 lg:h-28 w-auto" />
           </a>
           <a
             href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
@@ -340,8 +451,8 @@ export default function Chat() {
           </a>
         </nav>
 
-        {/* Headline & Subheadline */}
-        <div className="absolute inset-x-0 lg:inset-x-auto top-24 lg:top-[30%] lg:left-24 lg:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto lg:mx-0">
+        {/* Headline & Subheadline — desktop only */}
+        <div className="hidden lg:block absolute inset-x-0 lg:inset-x-auto top-24 lg:top-[30%] lg:left-24 lg:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto lg:mx-0">
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
             Creating <br /> What&apos;s Next.
           </h1>
@@ -352,18 +463,18 @@ export default function Chat() {
         {/* Chat wrapper */}
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
-          className={`absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4 ${(isMobile && hasMessages) ? "py-4" : ""}`}
+          className="absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
           style={!isMobile ? { top: hasMessages ? "10%" : "30%", marginLeft: "21.25rem", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? "55svh" : "-40dvh", x: "-50%" }}
-          animate={{ y: isMobile ? "55svh" : 0, x: "-50%" }}
+          initial={{ y: isMobile ? "48svh" : "-40dvh", x: "-50%" }}
+          animate={{ y: isMobile ? "48svh" : 0, x: "-50%" }}
           transition={{
             y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 2, ease: "linear" },
             opacity: { delay: 1.5, duration: 0.4 },
           }}
           onAnimationComplete={() => { if (!isMobile) setArrived(true) }}
         >
-          {/* Chat messages */}
-          {hasMessages && (
+          {/* Chat messages — desktop only; mobile uses the full-screen overlay */}
+          {hasMessages && !isMobile && (
             <motion.div
               ref={scrollContainerRef}
               className="scrollarea mb-8 w-full h-[50vh] rounded-2xl p-6 overflow-y-auto scroll-smooth border"
@@ -416,10 +527,9 @@ export default function Chat() {
             </motion.div>
           )}
 
-          {/* ── MOBILE: label + orb + chips rise together from below ── */}
-          {/* The label and chips are invisible (opacity 0) until the orb
-              expands, so visually only the dot is seen rising. */}
-          {isMobile && (
+          {/* ── MOBILE INTRO: label + orb + chips rise together from below ── */}
+          {/* Hidden once chat starts (the overlay takes over). */}
+          {isMobile && !hasMessages && (
             <motion.div
               className="flex flex-col items-center w-full"
               initial={{ y: "80vh" }}
@@ -443,7 +553,7 @@ export default function Chat() {
                 className="relative z-10 mb-0 rounded-full shadow-2xl"
                 style={{ border: "1px solid rgba(255,255,255,0.15)" }}
                 initial={false}
-                animate={arrived ? { width: "calc(100vw - 32px)", height: 64 } : { width: 48, height: 48 }}
+                animate={arrived ? { width: "calc(100vw - 56px)", height: 56 } : { width: 48, height: 48 }}
                 transition={{
                   width: { type: "spring", bounce: 0.2, duration: 1.3 },
                   height: { type: "spring", bounce: 0.2, duration: 1.3 },
