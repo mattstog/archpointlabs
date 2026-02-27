@@ -352,8 +352,8 @@ export default function Chat() {
         {/* Chat wrapper */}
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
-          className={`absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center ${!isMobile ? "ml-85" : ""} w-full max-w-[672px] px-4 ${(isMobile && hasMessages) ? "py-4" : ""}`}
-          style={!isMobile ? { top: hasMessages ? "10%" : "30%", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
+          className={`absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4 ${(isMobile && hasMessages) ? "py-4" : ""}`}
+          style={!isMobile ? { top: hasMessages ? "10%" : "30%", marginLeft: "21.25rem", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
           initial={{ y: isMobile ? "120svh" : "-40dvh", x: "-50%" }}
           animate={{ y: isMobile ? "55svh" : 0, x: "-50%" }}
           transition={{
