@@ -1,15 +1,12 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --brand-dark: #2e353e;
   --brand-red: #ef382e;
   --background: #2e353e;
   --foreground: #ffffff;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-figtree);
   --font-mono: var(--font-geist-mono);
 }
@@ -17,6 +14,7 @@
 html, body {
   min-height: 100%;
   background-color: #2e353e;
+  color: #ffffff;
 }
 
 .scrollarea {
