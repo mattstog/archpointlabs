@@ -308,8 +308,8 @@ export default function Chat() {
           width: "640px",
           height: "640px",
           opacity: 0.5,
-          maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 90%)",
-          WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 90%)",
+          maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
+          WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
         }}
       >
         <img src="/logos/AP Icon -White.svg" alt="" className="w-full h-full object-contain" />
