@@ -190,7 +190,7 @@ export default function Chat() {
     }
   )
 
-  function useIsMobile(breakpoint = 1280) {
+  function useIsMobile(breakpoint = 1200) {
     const [isMobile, setIsMobile] = useState(false)
     useEffect(() => {
       const check = () => setIsMobile(window.innerWidth < breakpoint)
@@ -457,7 +457,7 @@ export default function Chat() {
         {/* Navigation */}
         <nav className="absolute top-0 inset-x-0 z-50 flex items-center justify-between px-6 pt-6 pb-4">
           <a href="https://archpointlabs.com" className="flex items-center">
-            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-16 xl:h-28 w-auto" />
+            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-16 lg:h-28 w-auto" />
           </a>
           <a
             href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
@@ -471,21 +471,21 @@ export default function Chat() {
         </nav>
 
         {/* Headline & Subheadline */}
-        <div className="absolute inset-x-0 xl:inset-x-auto top-[22svh] xl:top-[30%] xl:left-24 xl:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto xl:mx-0">
+        <div className="absolute inset-x-0 lg:inset-x-auto top-[22svh] lg:top-[30%] lg:left-24 lg:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto lg:mx-0">
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
             Creating <br /> What&apos;s Next.
           </h1>
           <div className="mt-3 mb-4 lg:ml-0 mx-auto w-12 h-[3px] rounded-full" style={{ background: "#ef382e" }} />
-          <p className="hidden xl:block text-base xl:px-0 leading-relaxed text-white/70">{SUBHEAD}</p>
+          <p className="hidden lg:block text-base px-6 lg:px-0 leading-relaxed text-white/70">{SUBHEAD}</p>
         </div>
 
         {/* Chat wrapper */}
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
-          className="absolute top-0 xl:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
+          className="absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
           style={!isMobile ? { top: hasMessages ? "10%" : "30%", marginLeft: "21.25rem", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? "40svh" : "-40dvh", x: "-50%" }}
-          animate={{ y: isMobile ? "40svh" : 0, x: "-50%" }}
+          initial={{ y: isMobile ? "50svh" : "-40dvh", x: "-50%" }}
+          animate={{ y: isMobile ? "50svh" : 0, x: "-50%" }}
           transition={{
             y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 2, ease: "linear" },
             opacity: { delay: 1.5, duration: 0.4 },
@@ -659,7 +659,7 @@ export default function Chat() {
 
           {!isMobile && (
             <motion.div
-              className="relative z-10 mb-0 xl:mb-2 rounded-full shadow-2xl"
+              className="relative z-10 mb-0 lg:mb-2 rounded-full shadow-2xl"
               style={{ border: "1px solid rgba(255,255,255,0.15)" }}
               initial={false}
               animate={arrived ? { width: 672, height: 64 } : { width: 48, height: 48 }}
