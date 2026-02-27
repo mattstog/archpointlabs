@@ -190,7 +190,7 @@ export default function Chat() {
     }
   )
 
-  function useIsMobile(breakpoint = 1200) {
+  function useIsMobile(breakpoint = 1024) {
     const [isMobile, setIsMobile] = useState(false)
     useEffect(() => {
       const check = () => setIsMobile(window.innerWidth < breakpoint)
