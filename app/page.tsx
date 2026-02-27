@@ -315,11 +315,11 @@ export default function Chat() {
         aria-hidden
         className="fixed pointer-events-none z-0"
         style={{
-          bottom: isMobile ? "-50px" : "-110px",
-          left: isMobile ? "-50px" : "-110px",
-          width: isMobile ? "280px" : "640px",
-          height: isMobile ? "280px" : "640px",
-          opacity: isMobile ? 0.3 : 0.5,
+          bottom: (isMobile && !isTablet) ? "-50px" : "-110px",
+          left: (isMobile && !isTablet) ? "-50px" : "-110px",
+          width: (isMobile && !isTablet) ? "280px" : "640px",
+          height: (isMobile && !isTablet) ? "280px" : "640px",
+          opacity: (isMobile && !isTablet) ? 0.3 : 0.5,
           maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
           WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
         }}
@@ -501,8 +501,8 @@ export default function Chat() {
           key={mounted && isMobile ? "m" : "d"}
           className="absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
           style={!isMobile ? { top: hasMessages ? "10%" : "30%", marginLeft: "21.25rem", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? (isTablet ? "58svh" : "40svh") : "-40dvh", x: "-50%" }}
-          animate={{ y: isMobile ? (isTablet ? "58svh" : "40svh") : 0, x: "-50%" }}
+          initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: "-50%" }}
+          animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: "-50%" }}
           transition={{
             y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 2, ease: "linear" },
             opacity: { delay: 1.5, duration: 0.4 },
