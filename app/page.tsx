@@ -476,7 +476,7 @@ export default function Chat() {
             Creating <br /> What&apos;s Next.
           </h1>
           <div className="mt-3 mb-4 lg:ml-0 mx-auto w-12 h-[3px] rounded-full" style={{ background: "#ef382e" }} />
-          <p className="text-base px-6 lg:px-0 leading-relaxed text-white/70">{SUBHEAD}</p>
+          <p className="hidden lg:block text-base px-6 lg:px-0 leading-relaxed text-white/70">{SUBHEAD}</p>
         </div>
 
         {/* Chat wrapper */}
@@ -484,8 +484,8 @@ export default function Chat() {
           key={mounted && isMobile ? "m" : "d"}
           className="absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
           style={!isMobile ? { top: hasMessages ? "10%" : "30%", marginLeft: "21.25rem", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? "48svh" : "-40dvh", x: "-50%" }}
-          animate={{ y: isMobile ? "48svh" : 0, x: "-50%" }}
+          initial={{ y: isMobile ? "55svh" : "-40dvh", x: "-50%" }}
+          animate={{ y: isMobile ? "55svh" : 0, x: "-50%" }}
           transition={{
             y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 2, ease: "linear" },
             opacity: { delay: 1.5, duration: 0.4 },
