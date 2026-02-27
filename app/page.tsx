@@ -354,13 +354,13 @@ export default function Chat() {
           key={mounted && isMobile ? "m" : "d"}
           className={`absolute top-0 lg:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4 ${(isMobile && hasMessages) ? "py-4" : ""}`}
           style={!isMobile ? { top: hasMessages ? "10%" : "30%", marginLeft: "21.25rem", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? "120svh" : "-40dvh", x: "-50%" }}
+          initial={{ y: isMobile ? "55svh" : "-40dvh", x: "-50%" }}
           animate={{ y: isMobile ? "55svh" : 0, x: "-50%" }}
           transition={{
-            y: isMobile ? { delay: 1.2, duration: 3, ease: "linear" } : { delay: 1.5, duration: 2, ease: "linear" },
+            y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 2, ease: "linear" },
             opacity: { delay: 1.5, duration: 0.4 },
           }}
-          onAnimationComplete={() => setArrived(true)}
+          onAnimationComplete={() => { if (!isMobile) setArrived(true) }}
         >
           {/* Chat messages */}
           {hasMessages && (
@@ -416,8 +416,93 @@ export default function Chat() {
             </motion.div>
           )}
 
-          {/* Milo label */}
-          {!hasMessages && (
+          {/* ── MOBILE: label + orb + chips rise together from below ── */}
+          {/* The label and chips are invisible (opacity 0) until the orb
+              expands, so visually only the dot is seen rising. */}
+          {isMobile && (
+            <motion.div
+              className="flex flex-col items-center w-full"
+              initial={{ y: "80vh" }}
+              animate={{ y: 0 }}
+              transition={{ delay: 0.2, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+              onAnimationComplete={() => setArrived(true)}
+            >
+              {!hasMessages && (
+                <motion.div
+                  className="w-full text-center -z-10 pointer-events-none font-bold text-2xl text-white px-6"
+                  initial={false}
+                  animate={showLabel ? { opacity: 1, y: -12 } : { opacity: 0, y: 50 }}
+                  transition={{ type: "spring", bounce: 0.2, duration: 1 }}
+                >
+                  Hey, I&apos;m Milo! What do you want to learn about Archpoint?
+                </motion.div>
+              )}
+
+              {/* Orb */}
+              <motion.div
+                className="relative z-10 mb-0 rounded-full shadow-2xl"
+                style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+                initial={false}
+                animate={arrived ? { width: "calc(100vw - 32px)", height: 64 } : { width: 48, height: 48 }}
+                transition={{
+                  width: { type: "spring", bounce: 0.2, duration: 1.3 },
+                  height: { type: "spring", bounce: 0.2, duration: 1.3 },
+                }}
+                onAnimationComplete={() => {
+                  setTimeout(() => setShowLabel(true), 200)
+                  setTimeout(() => setShowExamples(true), 1200)
+                }}
+              >
+                <div className="relative h-full w-full">
+                  <div className="absolute inset-0 rounded-full z-0" style={{ background: "#ffffff" }}>
+                    <motion.form className="absolute inset-0 z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSubmit}>
+                      <input
+                        className={`h-full w-full rounded-full px-5 bg-transparent pr-20 focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 ${arrived ? "" : "pointer-events-none"}`}
+                        value={input}
+                        placeholder={arrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached for this session") : ""}
+                        onChange={(e) => setInput(e.currentTarget.value)}
+                        disabled={isLoading || !canChat}
+                      />
+                      {input && arrived && !isLoading && canChat && (
+                        <button
+                          type="button"
+                          onClick={handleSubmit}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:opacity-90 hover:cursor-pointer"
+                          style={{ background: "#ef382e" }}
+                        >
+                          <ArrowUp className="w-4 h-4 text-white" />
+                        </button>
+                      )}
+                    </motion.form>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Chips (mobile) */}
+              {!hasMessages && (
+                <motion.ul className="mt-5 flex flex-wrap gap-3 items-center justify-center w-full">
+                  {examplesForMobile.filter(e => !usedExamples.includes(e)).map((t, i) => (
+                    <motion.li
+                      key={t}
+                      initial={false}
+                      animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.5, delay: i * 0.3 }}
+                      onClick={() => { if (!isLoading && canChat) handleExampleClick(t) }}
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium text-white/80 transition-colors ${!canChat ? "cursor-not-allowed opacity-40" : isLoading ? "cursor-wait opacity-60" : "cursor-pointer hover:text-white"}`}
+                      style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+                      title={!canChat ? "Chat limit reached for this session" : undefined}
+                    >
+                      {t}
+                    </motion.li>
+                  ))}
+                </motion.ul>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── DESKTOP: label + orb + chips (no rise wrapper needed) ── */}
+          {!isMobile && !hasMessages && (
             <motion.div
               className="w-full text-center -z-10 pointer-events-none font-bold text-2xl text-white px-6"
               initial={false}
@@ -428,64 +513,67 @@ export default function Chat() {
             </motion.div>
           )}
 
-          {/* Input orb */}
-          <motion.div
-            className="relative z-10 mb-0 lg:mb-2 rounded-full shadow-2xl"
-            style={{ border: "1px solid rgba(255,255,255,0.15)" }}
-            initial={false}
-            animate={arrived ? { width: isMobile ? "calc(100vw - 32px)" : 672, height: 64 } : { width: 48, height: 48 }}
-            transition={{
-              width: { type: "spring", bounce: 0.2, duration: 1.3 },
-              height: { type: "spring", bounce: 0.2, duration: 1.3 },
-            }}
-            onAnimationComplete={() => {
-              setTimeout(() => setShowLabel(true), 200)
-              setTimeout(() => setShowExamples(true), 1200)
-            }}
-          >
-            <div className="relative h-full w-full">
-              <div className="absolute inset-0 rounded-full z-0" style={{ background: "#ffffff" }}>
-                <motion.form className="absolute inset-0 z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSubmit}>
-                  <input
-                    className={`h-full w-full rounded-full px-5 bg-transparent pr-20 focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 ${arrived ? "" : "pointer-events-none"}`}
-                    value={input}
-                    placeholder={arrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached for this session") : ""}
-                    onChange={(e) => setInput(e.currentTarget.value)}
-                    disabled={isLoading || !canChat}
-                  />
-                  {input && arrived && !isLoading && canChat && (
-                    <button
-                      type="button"
-                      onClick={handleSubmit}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:opacity-90 hover:cursor-pointer"
-                      style={{ background: "#ef382e" }}
-                    >
-                      <ArrowUp className="w-4 h-4 text-white" />
-                    </button>
-                  )}
-                </motion.form>
+          {!isMobile && (
+            <motion.div
+              className="relative z-10 mb-0 lg:mb-2 rounded-full shadow-2xl"
+              style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+              initial={false}
+              animate={arrived ? { width: 672, height: 64 } : { width: 48, height: 48 }}
+              transition={{
+                width: { type: "spring", bounce: 0.2, duration: 1.3 },
+                height: { type: "spring", bounce: 0.2, duration: 1.3 },
+              }}
+              onAnimationComplete={() => {
+                setTimeout(() => setShowLabel(true), 200)
+                setTimeout(() => setShowExamples(true), 1200)
+              }}
+            >
+              <div className="relative h-full w-full">
+                <div className="absolute inset-0 rounded-full z-0" style={{ background: "#ffffff" }}>
+                  <motion.form className="absolute inset-0 z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSubmit}>
+                    <input
+                      className={`h-full w-full rounded-full px-5 bg-transparent pr-20 focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 ${arrived ? "" : "pointer-events-none"}`}
+                      value={input}
+                      placeholder={arrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached for this session") : ""}
+                      onChange={(e) => setInput(e.currentTarget.value)}
+                      disabled={isLoading || !canChat}
+                    />
+                    {input && arrived && !isLoading && canChat && (
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:opacity-90 hover:cursor-pointer"
+                        style={{ background: "#ef382e" }}
+                      >
+                        <ArrowUp className="w-4 h-4 text-white" />
+                      </button>
+                    )}
+                  </motion.form>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
 
-          {/* Example chips */}
-          <motion.ul className="mt-5 flex flex-wrap gap-3 items-center justify-center w-full">
-            {examplesToUse.filter(e => !usedExamples.includes(e)).map((t, i) => (
-              <motion.li
-                key={t}
-                initial={false}
-                animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5, delay: i * 0.3 }}
-                onClick={() => { if (!isLoading && canChat) handleExampleClick(t) }}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium text-white/80 transition-colors ${!canChat ? "cursor-not-allowed opacity-40" : isLoading ? "cursor-wait opacity-60" : "cursor-pointer hover:text-white"}`}
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
-                title={!canChat ? "Chat limit reached for this session" : undefined}
-              >
-                {t}
-              </motion.li>
-            ))}
-          </motion.ul>
+          {!isMobile && !hasMessages && (
+            <motion.ul className="mt-5 flex flex-wrap gap-3 items-center justify-center w-full">
+              {examples.filter(e => !usedExamples.includes(e)).map((t, i) => (
+                <motion.li
+                  key={t}
+                  initial={false}
+                  animate={showExamples ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5, delay: i * 0.3 }}
+                  onClick={() => { if (!isLoading && canChat) handleExampleClick(t) }}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium text-white/80 transition-colors ${!canChat ? "cursor-not-allowed opacity-40" : isLoading ? "cursor-wait opacity-60" : "cursor-pointer hover:text-white"}`}
+                  style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+                  title={!canChat ? "Chat limit reached for this session" : undefined}
+                >
+                  {t}
+                </motion.li>
+              ))}
+            </motion.ul>
+          )}
+
         </motion.div>
       </div>
 
