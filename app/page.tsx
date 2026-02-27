@@ -292,8 +292,8 @@ export default function Chat() {
         className="fixed inset-0 z-0"
         style={{
           background:
-            "radial-gradient(ellipse at 20% 0%, rgba(239,56,46,0.22) 0%, transparent 55%), " +
-            "radial-gradient(ellipse at 85% 100%, rgba(239,56,46,0.14) 0%, transparent 45%), " +
+            "radial-gradient(ellipse at 20% 0%, rgba(239,56,46,0.14) 0%, transparent 55%), " +
+            "radial-gradient(ellipse at 85% 100%, rgba(239,56,46,0.33) 0%, transparent 45%), " +
             "#2e353e",
         }}
       />
