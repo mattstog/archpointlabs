@@ -715,7 +715,7 @@ export default function Chat() {
             </motion.div>
           )}
 
-          {!isMobile && !hasMessages && (
+          {!isMobile && examples.filter(e => !usedExamples.includes(e)).length > 0 && (
             <motion.ul className="mt-5 flex flex-wrap gap-3 items-center justify-center w-full">
               {examples.filter(e => !usedExamples.includes(e)).map((t, i) => (
                 <motion.li
