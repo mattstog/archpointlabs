@@ -41,7 +41,7 @@ async function logConversation(sessionId: string, messages: Message[], response:
     const updated = await sql`
       UPDATE conversations
       SET
-        message_count = ${messages.length},
+        message_count = ${messages.length + 1},
         messages      = ${JSON.stringify(messages)}::jsonb,
         ai_response   = ${response},
         ts            = NOW()
@@ -56,7 +56,7 @@ async function logConversation(sessionId: string, messages: Message[], response:
           ${sessionId},
           ${userInfo?.ip ?? 'unknown'},
           ${userInfo?.userAgent ?? 'unknown'},
-          ${messages.length},
+          ${messages.length + 1},
           ${JSON.stringify(messages)}::jsonb,
           ${response}
         )

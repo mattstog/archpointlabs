@@ -294,7 +294,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="flex flex-col gap-1.5">
                 {[
                   ...selectedConversation.messages,
                   { role: 'assistant' as const, content: selectedConversation.ai_response },
@@ -302,15 +302,15 @@ export default function AdminDashboard() {
                   const isUser = message.role === 'user'
                   return (
                     <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] px-4 py-3 rounded-2xl ${
+                      <div className={`max-w-[75%] px-3 py-2 rounded-2xl ${
                         isUser
                           ? 'bg-blue-600/40 border border-blue-500/40 rounded-br-sm'
                           : 'bg-gray-700/50 border border-gray-600/40 rounded-bl-sm'
                       }`}>
-                        <p className={`text-xs font-semibold mb-1 ${isUser ? 'text-blue-300 text-right' : 'text-gray-400'}`}>
+                        <p className={`text-[10px] font-semibold mb-0.5 ${isUser ? 'text-blue-300 text-right' : 'text-gray-400'}`}>
                           {isUser ? 'User' : 'Milo'}
                         </p>
-                        <p className="text-gray-200 whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                        <p className="text-gray-200 whitespace-pre-wrap text-sm leading-snug">{message.content}</p>
                       </div>
                     </div>
                   )
