@@ -504,7 +504,7 @@ export default function Chat() {
           initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: "-50%" }}
           animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: "-50%" }}
           transition={{
-            y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 1.1, ease: [0.16, 1, 0.3, 1] },
+            y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] },
             opacity: { delay: 1.5, duration: 0.4 },
           }}
           onAnimationComplete={() => { if (!isMobile) setArrived(true) }}
