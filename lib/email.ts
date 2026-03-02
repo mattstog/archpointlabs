@@ -67,35 +67,39 @@ function formatConversationForEmail(conversation: Conversation): string {
   const assistantMessages = conversation.messages.filter((m) => m.role === 'assistant')
 
   let html = `
-    <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 24px; background-color: #f9fafb;">
-      <div style="margin-bottom: 12px;">
-        <strong style="color: #1f2937;">Session:</strong> <code style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px;">${conversation.session_id.slice(0, 16)}...</code><br>
-        <strong style="color: #1f2937;">IP:</strong> ${conversation.ip}<br>
-        <strong style="color: #1f2937;">Time:</strong> ${date}<br>
-        <strong style="color: #1f2937;">Messages:</strong> ${conversation.message_count}
+    <div style="border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 18px; margin-bottom: 20px; background: rgba(255,255,255,0.04);">
+      <div style="margin-bottom: 14px; font-size: 12px; color: rgba(255,255,255,0.35); display: flex; flex-wrap: wrap; gap: 12px;">
+        <span>🕐 ${date}</span>
+        <span>💬 ${conversation.message_count} messages</span>
+        <span>🌐 ${conversation.ip}</span>
+        <span>🔑 ${conversation.session_id.slice(0, 12)}...</span>
       </div>
-      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;">
+      <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px;">
   `
 
   userMessages.forEach((msg, idx) => {
     html += `
-      <div style="margin-bottom: 12px; background: #eff6ff; padding: 12px; border-radius: 6px; border-left: 3px solid #3b82f6;">
-        <strong style="color: #1e40af; font-size: 12px; text-transform: uppercase;">User Message ${idx + 1}:</strong>
-        <p style="margin: 8px 0 0 0; color: #1f2937; white-space: pre-wrap;">${escapeHtml(msg.content)}</p>
+      <div style="margin-bottom: 10px; display: flex; justify-content: flex-end;">
+        <div style="max-width: 80%; background: rgba(239,56,46,0.15); border: 1px solid rgba(239,56,46,0.25); padding: 10px 14px; border-radius: 14px; border-bottom-right-radius: 3px;">
+          <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; color: #ef382e; text-align: right; text-transform: uppercase; letter-spacing: 0.5px;">User ${userMessages.length > 1 ? idx + 1 : ''}</p>
+          <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px; white-space: pre-wrap;">${escapeHtml(msg.content)}</p>
+        </div>
       </div>
     `
   })
 
   assistantMessages.forEach((msg, idx) => {
     html += `
-      <div style="margin-bottom: 12px; background: #f3f4f6; padding: 12px; border-radius: 6px; border-left: 3px solid #6b7280;">
-        <strong style="color: #374151; font-size: 12px; text-transform: uppercase;">AI Response ${idx + 1}:</strong>
-        <p style="margin: 8px 0 0 0; color: #1f2937; white-space: pre-wrap;">${escapeHtml(msg.content)}</p>
+      <div style="margin-bottom: 10px; display: flex; justify-content: flex-start;">
+        <div style="max-width: 80%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); padding: 10px 14px; border-radius: 14px; border-bottom-left-radius: 3px;">
+          <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.5px;">Milo ${assistantMessages.length > 1 ? idx + 1 : ''}</p>
+          <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px; white-space: pre-wrap;">${escapeHtml(msg.content)}</p>
+        </div>
       </div>
     `
   })
 
-  html += `</div>`
+  html += `</div></div>`
 
   return html
 }
@@ -138,34 +142,37 @@ export async function sendDailyDigest(): Promise<{ success: boolean; message: st
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; margin: 0; padding: 0;">
-        <div style="max-width: 800px; margin: 0 auto; padding: 24px;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0; font-size: 28px; font-weight: bold;">📊 Daily Conversation Digest</h1>
-            <p style="margin: 8px 0 0 0; opacity: 0.9;">Archpoint Labs Chat Analytics</p>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #ffffff; background-color: #2e353e; margin: 0; padding: 0;">
+        <div style="max-width: 680px; margin: 0 auto; padding: 32px 24px;">
+
+          <!-- Header -->
+          <div style="margin-bottom: 32px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+              <div style="width: 4px; height: 28px; background: #ef382e; border-radius: 4px; display: inline-block;"></div>
+              <span style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px;">Archpoint Labs</span>
+            </div>
+            <p style="margin: 0 0 0 14px; font-size: 13px; color: rgba(255,255,255,0.4);">Daily Conversation Digest</p>
           </div>
 
-          <div style="background: #ffffff; padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-            <div style="background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 16px; margin-bottom: 24px;">
-              <p style="margin: 0; font-size: 18px; color: #1e40af;">
-                <strong>${conversations.length}</strong> new conversation${conversations.length !== 1 ? 's' : ''} in the last 24 hours
-              </p>
-            </div>
-
-            ${conversations.map((conv) => formatConversationForEmail(conv)).join('')}
-
-            <hr style="border: none; border-top: 2px solid #e5e7eb; margin: 24px 0;">
-
-            <div style="text-align: center; color: #6b7280; font-size: 14px;">
-              <p>This is an automated daily digest from your Archpoint Labs website.</p>
-              <p style="margin-top: 8px;">
-                <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://archpointlabs.com'}/admin"
-                   style="color: #3b82f6; text-decoration: none;">
-                  View Admin Dashboard →
-                </a>
-              </p>
-            </div>
+          <!-- Summary pill -->
+          <div style="background: rgba(239,56,46,0.12); border: 1px solid rgba(239,56,46,0.3); border-radius: 8px; padding: 14px 18px; margin-bottom: 28px;">
+            <p style="margin: 0; font-size: 15px; color: #ffffff;">
+              <strong style="color: #ef382e;">${conversations.length}</strong> new conversation${conversations.length !== 1 ? 's' : ''} in the last 24 hours
+            </p>
           </div>
+
+          <!-- Conversations -->
+          ${conversations.map((conv) => formatConversationForEmail(conv)).join('')}
+
+          <!-- Footer -->
+          <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://archpointlabs.com'}/admin"
+               style="display: inline-block; background: #ef382e; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 20px;">
+              View Dashboard →
+            </a>
+            <p style="margin: 16px 0 0 0; font-size: 12px; color: rgba(255,255,255,0.25);">Automated daily digest · Archpoint Labs</p>
+          </div>
+
         </div>
       </body>
       </html>
