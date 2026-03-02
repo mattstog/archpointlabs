@@ -294,25 +294,27 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[
                   ...selectedConversation.messages,
                   { role: 'assistant' as const, content: selectedConversation.ai_response },
-                ].map((message, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-4 rounded-lg ${
-                      message.role === 'user'
-                        ? 'bg-blue-900/30 border border-blue-700/50'
-                        : 'bg-gray-700/30 border border-gray-600/50'
-                    }`}
-                  >
-                    <p className="text-xs text-gray-400 mb-2 uppercase font-semibold">
-                      {message.role === 'user' ? 'User' : 'Milo'}
-                    </p>
-                    <p className="text-gray-200 whitespace-pre-wrap">{message.content}</p>
-                  </div>
-                ))}
+                ].map((message, idx) => {
+                  const isUser = message.role === 'user'
+                  return (
+                    <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[75%] px-4 py-3 rounded-2xl ${
+                        isUser
+                          ? 'bg-blue-600/40 border border-blue-500/40 rounded-br-sm'
+                          : 'bg-gray-700/50 border border-gray-600/40 rounded-bl-sm'
+                      }`}>
+                        <p className={`text-xs font-semibold mb-1 ${isUser ? 'text-blue-300 text-right' : 'text-gray-400'}`}>
+                          {isUser ? 'User' : 'Milo'}
+                        </p>
+                        <p className="text-gray-200 whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
