@@ -162,7 +162,14 @@ export default function AdminDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="rounded-xl p-5 border border-white/10" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <button
+            onClick={() => setDateFilter('all')}
+            className="rounded-xl p-5 border transition-all text-left w-full"
+            style={{
+              background: dateFilter === 'all' ? 'rgba(239,56,46,0.12)' : 'rgba(255,255,255,0.04)',
+              borderColor: dateFilter === 'all' ? 'rgba(239,56,46,0.5)' : 'rgba(255,255,255,0.1)',
+            }}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white/40 text-xs uppercase tracking-wide mb-1">Total</p>
@@ -170,7 +177,7 @@ export default function AdminDashboard() {
               </div>
               <MessageSquare className="w-8 h-8 text-white/20" />
             </div>
-          </div>
+          </button>
 
           <button
             onClick={() => setDateFilter(dateFilter === 'today' ? 'all' : 'today')}
