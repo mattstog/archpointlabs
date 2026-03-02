@@ -63,40 +63,41 @@ function formatConversationForEmail(conversation: Conversation): string {
     hour12: true,
   })
 
-  const userMessages = conversation.messages.filter((m) => m.role === 'user')
-  const assistantMessages = conversation.messages.filter((m) => m.role === 'assistant')
+  // Full conversation in order: stored messages + final ai_response
+  const allMessages = [
+    ...conversation.messages,
+    { role: 'assistant' as const, content: conversation.ai_response },
+  ]
 
   let html = `
     <div style="border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 18px; margin-bottom: 20px; background: rgba(255,255,255,0.04);">
-      <div style="margin-bottom: 14px; font-size: 12px; color: rgba(255,255,255,0.35); display: flex; flex-wrap: wrap; gap: 12px;">
-        <span>🕐 ${date}</span>
-        <span>💬 ${conversation.message_count} messages</span>
-        <span>🌐 ${conversation.ip}</span>
-        <span>🔑 ${conversation.session_id.slice(0, 12)}...</span>
+      <div style="margin-bottom: 14px; font-size: 12px; color: rgba(255,255,255,0.35);">
+        🕐 ${date} &nbsp;·&nbsp; 💬 ${conversation.message_count} messages &nbsp;·&nbsp; 🌐 ${conversation.ip}
       </div>
       <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px;">
   `
 
-  userMessages.forEach((msg, idx) => {
-    html += `
-      <div style="margin-bottom: 10px; display: flex; justify-content: flex-end;">
-        <div style="max-width: 80%; background: rgba(239,56,46,0.15); border: 1px solid rgba(239,56,46,0.25); padding: 10px 14px; border-radius: 14px; border-bottom-right-radius: 3px;">
-          <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; color: #ef382e; text-align: right; text-transform: uppercase; letter-spacing: 0.5px;">User ${userMessages.length > 1 ? idx + 1 : ''}</p>
-          <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px; white-space: pre-wrap;">${escapeHtml(msg.content)}</p>
+  allMessages.forEach((msg) => {
+    const isUser = msg.role === 'user'
+    if (isUser) {
+      html += `
+        <div style="margin-bottom: 8px; text-align: right;">
+          <div style="display: inline-block; text-align: left; max-width: 80%; background: rgba(239,56,46,0.15); border: 1px solid rgba(239,56,46,0.25); padding: 10px 14px; border-radius: 14px; border-bottom-right-radius: 3px;">
+            <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; color: #ef382e; text-align: right; text-transform: uppercase; letter-spacing: 0.5px;">User</p>
+            <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px; white-space: pre-wrap;">${escapeHtml(msg.content)}</p>
+          </div>
         </div>
-      </div>
-    `
-  })
-
-  assistantMessages.forEach((msg, idx) => {
-    html += `
-      <div style="margin-bottom: 10px; display: flex; justify-content: flex-start;">
-        <div style="max-width: 80%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); padding: 10px 14px; border-radius: 14px; border-bottom-left-radius: 3px;">
-          <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.5px;">Milo ${assistantMessages.length > 1 ? idx + 1 : ''}</p>
-          <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px; white-space: pre-wrap;">${escapeHtml(msg.content)}</p>
+      `
+    } else {
+      html += `
+        <div style="margin-bottom: 8px; text-align: left;">
+          <div style="display: inline-block; max-width: 80%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); padding: 10px 14px; border-radius: 14px; border-bottom-left-radius: 3px;">
+            <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.5px;">Milo</p>
+            <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px; white-space: pre-wrap;">${escapeHtml(msg.content)}</p>
+          </div>
         </div>
-      </div>
-    `
+      `
+    }
   })
 
   html += `</div></div>`
