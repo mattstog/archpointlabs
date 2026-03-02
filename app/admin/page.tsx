@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, MessageSquare, User, Clock, Globe } from 'lucide-react'
+import { Calendar, MessageSquare, User, Clock, Globe, ArrowUpDown } from 'lucide-react'
 
 type Message = {
   role: 'user' | 'assistant' | 'system'
@@ -19,6 +19,8 @@ type Conversation = {
   ts: string
 }
 
+const LAST_VISITED_KEY = 'admin_last_visited'
+
 export default function AdminDashboard() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,8 +28,15 @@ export default function AdminDashboard() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [dateFilter, setDateFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('newest')
+  const [seenBefore, setSeenBefore] = useState<Date | null>(null)
 
   useEffect(() => {
+    // Record when we last visited so next time we can show new convos
+    const stored = localStorage.getItem(LAST_VISITED_KEY)
+    setSeenBefore(stored ? new Date(stored) : null)
+    localStorage.setItem(LAST_VISITED_KEY, new Date().toISOString())
+
     fetchConversations()
   }, [])
 
@@ -35,9 +44,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true)
       const response = await fetch('/api/conversations')
-      if (!response.ok) {
-        throw new Error('Failed to fetch conversations')
-      }
+      if (!response.ok) throw new Error('Failed to fetch conversations')
       const data = await response.json()
       setConversations(data.conversations || [])
     } catch (err) {
@@ -47,44 +54,55 @@ export default function AdminDashboard() {
     }
   }
 
-  const filteredConversations = conversations.filter(conv => {
-    // Skip null/undefined conversations or those without timestamp
-    if (!conv || !conv.ts) return false
+  const isUnread = (conv: Conversation) => {
+    if (!seenBefore || !conv.ts) return false
+    return new Date(conv.ts) > seenBefore
+  }
 
-    const matchesSearch =
-      conv.session_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conv.ip.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      JSON.stringify(conv.messages).toLowerCase().includes(searchTerm.toLowerCase())
+  const unreadCount = conversations.filter(isUnread).length
 
-    const convDate = new Date(conv.ts)
-    const now = new Date()
-    let matchesDate = true
+  const filteredConversations = conversations
+    .filter(conv => {
+      if (!conv || !conv.ts) return false
 
-    if (dateFilter === 'today') {
-      matchesDate = convDate.toDateString() === now.toDateString()
-    } else if (dateFilter === 'week') {
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      matchesDate = convDate >= weekAgo
-    } else if (dateFilter === 'month') {
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      matchesDate = convDate >= monthAgo
-    }
+      const matchesSearch =
+        conv.session_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        conv.ip.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        JSON.stringify(conv.messages).toLowerCase().includes(searchTerm.toLowerCase())
 
-    return matchesSearch && matchesDate
-  })
+      const convDate = new Date(conv.ts)
+      const now = new Date()
+      let matchesDate = true
+
+      if (dateFilter === 'today') {
+        matchesDate = convDate.toDateString() === now.toDateString()
+      } else if (dateFilter === 'week') {
+        matchesDate = convDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      } else if (dateFilter === 'month') {
+        matchesDate = convDate >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      }
+
+      return matchesSearch && matchesDate
+    })
+    .sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.ts).getTime() - new Date(a.ts).getTime()
+      if (sortBy === 'oldest') return new Date(a.ts).getTime() - new Date(b.ts).getTime()
+      if (sortBy === 'most') return (b.message_count ?? 0) - (a.message_count ?? 0)
+      if (sortBy === 'fewest') return (a.message_count ?? 0) - (b.message_count ?? 0)
+      return 0
+    })
 
   const formatDate = (conv: Conversation | null | undefined) => {
     if (!conv || !conv.ts) return 'Unknown date'
     try {
-      const date = new Date(conv.ts)
       return new Intl.DateTimeFormat('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true
-      }).format(date)
+        hour12: true,
+      }).format(new Date(conv.ts))
     } catch {
       return 'Invalid date'
     }
@@ -129,11 +147,27 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Conversation Dashboard
-          </h1>
-          <p className="text-gray-400">Monitor and analyze chat interactions</p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              Conversation Dashboard
+            </h1>
+            <p className="text-gray-400">
+              Monitor and analyze chat interactions
+              {unreadCount > 0 && (
+                <span className="ml-2 inline-flex items-center gap-1 bg-red-500/20 text-red-400 text-xs font-semibold px-2 py-0.5 rounded-full border border-red-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block"></span>
+                  {unreadCount} new
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={fetchConversations}
+            className="text-sm text-gray-400 hover:text-white transition px-3 py-1.5 rounded-lg border border-gray-700 hover:border-gray-500"
+          >
+            Refresh
+          </button>
         </div>
 
         {/* Stats */}
@@ -155,7 +189,7 @@ export default function AdminDashboard() {
                 ? 'border-green-500 ring-2 ring-green-500/50'
                 : 'border-gray-700 hover:border-green-500/50 hover:bg-gray-800/70'
             }`}
-            aria-label={dateFilter === 'today' ? 'Clear filter' : "Filter to show today's conversations"}
+            aria-label={dateFilter === 'today' ? 'Clear filter' : "Filter to today's conversations"}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -166,9 +200,7 @@ export default function AdminDashboard() {
                   ).length}
                 </p>
               </div>
-              <Calendar className={`w-12 h-12 transition-colors ${
-                dateFilter === 'today' ? 'text-green-400' : 'text-green-500'
-              }`} />
+              <Calendar className={`w-12 h-12 transition-colors ${dateFilter === 'today' ? 'text-green-400' : 'text-green-500'}`} />
             </div>
           </button>
 
@@ -179,7 +211,7 @@ export default function AdminDashboard() {
                 ? 'border-purple-500 ring-2 ring-purple-500/50'
                 : 'border-gray-700 hover:border-purple-500/50 hover:bg-gray-800/70'
             }`}
-            aria-label={dateFilter === 'week' ? 'Clear filter' : "Filter to show this week's conversations"}
+            aria-label={dateFilter === 'week' ? 'Clear filter' : "Filter to this week's conversations"}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -187,19 +219,16 @@ export default function AdminDashboard() {
                 <p className="text-3xl font-bold">
                   {conversations.filter(c => {
                     if (!c.ts) return false
-                    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                    return new Date(c.ts) >= weekAgo
+                    return new Date(c.ts) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                   }).length}
                 </p>
               </div>
-              <Clock className={`w-12 h-12 transition-colors ${
-                dateFilter === 'week' ? 'text-purple-400' : 'text-purple-500'
-              }`} />
+              <Clock className={`w-12 h-12 transition-colors ${dateFilter === 'week' ? 'text-purple-400' : 'text-purple-500'}`} />
             </div>
           </button>
         </div>
 
-        {/* Filters */}
+        {/* Filters + Sort */}
         <div className="mb-6 flex flex-col md:flex-row gap-4">
           <input
             type="text"
@@ -218,9 +247,22 @@ export default function AdminDashboard() {
             <option value="week">This Week</option>
             <option value="month">This Month</option>
           </select>
+          <div className="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3">
+            <ArrowUpDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-transparent text-white focus:outline-none"
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="most">Most messages</option>
+              <option value="fewest">Fewest messages</option>
+            </select>
+          </div>
         </div>
 
-        {/* Conversations List */}
+        {/* Conversations List / Detail */}
         {selectedConversation ? (
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
             <button
@@ -270,9 +312,7 @@ export default function AdminDashboard() {
                 ))}
 
                 <div className="p-4 rounded-lg bg-purple-900/30 border border-purple-700/50">
-                  <p className="text-xs text-gray-400 mb-2 uppercase font-semibold">
-                    AI Response
-                  </p>
+                  <p className="text-xs text-gray-400 mb-2 uppercase font-semibold">AI Response</p>
                   <p className="text-gray-200 whitespace-pre-wrap">{selectedConversation.ai_response}</p>
                 </div>
               </div>
@@ -285,39 +325,52 @@ export default function AdminDashboard() {
                 No conversations found
               </div>
             ) : (
-              filteredConversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  onClick={() => setSelectedConversation(conversation)}
-                  className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-blue-500 cursor-pointer transition group"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-2 group-hover:text-blue-400 transition">
-                        {getConversationPreview(conversation.messages)}
-                      </h3>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          {conversation.session_id.slice(0, 8)}...
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Globe className="w-4 h-4" />
-                          {conversation.ip}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {formatDate(conversation)}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MessageSquare className="w-4 h-4" />
-                          {conversation.message_count} messages
+              filteredConversations.map((conversation) => {
+                const unread = isUnread(conversation)
+                return (
+                  <div
+                    key={conversation.id}
+                    onClick={() => setSelectedConversation(conversation)}
+                    className={`relative bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border cursor-pointer transition group ${
+                      unread
+                        ? 'border-red-500/40 hover:border-red-400'
+                        : 'border-gray-700 hover:border-blue-500'
+                    }`}
+                  >
+                    {unread && (
+                      <span className="absolute top-4 right-4 inline-flex items-center gap-1 bg-red-500/20 text-red-400 text-xs font-semibold px-2 py-0.5 rounded-full border border-red-500/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block"></span>
+                        New
+                      </span>
+                    )}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 pr-16">
+                        <h3 className={`text-lg font-semibold mb-2 transition ${unread ? 'text-white group-hover:text-red-300' : 'group-hover:text-blue-400'}`}>
+                          {getConversationPreview(conversation.messages)}
+                        </h3>
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-400">
+                          <div className="flex items-center gap-1">
+                            <User className="w-4 h-4" />
+                            {conversation.session_id.slice(0, 8)}...
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Globe className="w-4 h-4" />
+                            {conversation.ip}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {formatDate(conversation)}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MessageSquare className="w-4 h-4" />
+                            {conversation.message_count} messages
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         )}
