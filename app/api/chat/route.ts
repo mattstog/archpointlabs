@@ -36,18 +36,34 @@ function getSystemPrompt(): string {
 
 async function logConversation(sessionId: string, messages: Message[], response: string, userInfo?: UserInfo) {
   try {
-    await sql`
-      INSERT INTO conversations (session_id, ip, user_agent, message_count, messages, ai_response)
-      VALUES (
-        ${sessionId},
-        ${userInfo?.ip ?? 'unknown'},
-        ${userInfo?.userAgent ?? 'unknown'},
-        ${messages.length},
-        ${JSON.stringify(messages)}::jsonb,
-        ${response}
-      )
+    // Update existing row for this session if it exists, otherwise insert a new one.
+    // This prevents duplicate rows from being created for each message in a conversation.
+    const updated = await sql`
+      UPDATE conversations
+      SET
+        message_count = ${messages.length},
+        messages      = ${JSON.stringify(messages)}::jsonb,
+        ai_response   = ${response},
+        ts            = NOW()
+      WHERE session_id = ${sessionId}
+      RETURNING id
     `
-    console.log(`💬 Conversation logged to Neon: ${sessionId}`)
+
+    if (updated.length === 0) {
+      await sql`
+        INSERT INTO conversations (session_id, ip, user_agent, message_count, messages, ai_response)
+        VALUES (
+          ${sessionId},
+          ${userInfo?.ip ?? 'unknown'},
+          ${userInfo?.userAgent ?? 'unknown'},
+          ${messages.length},
+          ${JSON.stringify(messages)}::jsonb,
+          ${response}
+        )
+      `
+    }
+
+    console.log(`💬 Conversation upserted to Neon: ${sessionId}`)
   } catch (err) {
     console.error('Error logging conversation:', err)
   }
