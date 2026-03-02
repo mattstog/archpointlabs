@@ -295,7 +295,10 @@ export default function AdminDashboard() {
               </div>
 
               <div className="space-y-4">
-                {selectedConversation.messages.map((message, idx) => (
+                {[
+                  ...selectedConversation.messages,
+                  { role: 'assistant' as const, content: selectedConversation.ai_response },
+                ].map((message, idx) => (
                   <div
                     key={idx}
                     className={`p-4 rounded-lg ${
@@ -305,16 +308,11 @@ export default function AdminDashboard() {
                     }`}
                   >
                     <p className="text-xs text-gray-400 mb-2 uppercase font-semibold">
-                      {message.role}
+                      {message.role === 'user' ? 'User' : 'Milo'}
                     </p>
                     <p className="text-gray-200 whitespace-pre-wrap">{message.content}</p>
                   </div>
                 ))}
-
-                <div className="p-4 rounded-lg bg-purple-900/30 border border-purple-700/50">
-                  <p className="text-xs text-gray-400 mb-2 uppercase font-semibold">AI Response</p>
-                  <p className="text-gray-200 whitespace-pre-wrap">{selectedConversation.ai_response}</p>
-                </div>
               </div>
             </div>
           </div>
