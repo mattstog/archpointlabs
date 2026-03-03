@@ -474,6 +474,7 @@ export default function Chat() {
                 <button
                   type="button"
                   onClick={handleSubmit}
+                  onMouseDown={(e) => e.preventDefault()}
                   className="mr-2 w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:opacity-90"
                   style={{ background: "#ef382e" }}
                 >
@@ -732,6 +733,7 @@ export default function Chat() {
                       <button
                         type="button"
                         onClick={handleSubmit}
+                        onMouseDown={(e) => e.preventDefault()}
                         className="mr-2 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:opacity-90 hover:cursor-pointer"
                         style={{ background: "#ef382e" }}
                       >
