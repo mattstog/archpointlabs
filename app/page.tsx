@@ -74,6 +74,7 @@ export default function Chat() {
   const desktopTextareaRef = useRef<HTMLTextAreaElement>(null)
   const mobileInputRef = useRef<HTMLInputElement>(null)
   const [desktopInputHeight, setDesktopInputHeight] = useState(64)
+  const hasAutoFocused = useRef(false)
 
   const examples = [
     "Can you help with AI implementation?",
@@ -713,6 +714,10 @@ export default function Chat() {
               onAnimationComplete={() => {
                 setTimeout(() => setShowLabel(true), 200)
                 setTimeout(() => setShowExamples(true), 1200)
+                if (!hasAutoFocused.current) {
+                  hasAutoFocused.current = true
+                  desktopTextareaRef.current?.focus()
+                }
               }}
             >
               <div className="relative h-full w-full">
