@@ -523,7 +523,7 @@ export default function Chat() {
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
           className="absolute top-0 xl:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
-          style={!isMobile ? { top: hasMessages ? "18%" : "30%", marginLeft: "clamp(8vw, 21.25rem, calc(50vw - 376px))", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
+          style={!isMobile ? { top: hasMessages ? "13%" : "30%", marginLeft: "clamp(8vw, 21.25rem, calc(50vw - 376px))", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
           initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: "-50%", opacity: isMobile ? 1 : 0 }}
           animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: "-50%", opacity: 1 }}
           transition={{
@@ -536,8 +536,8 @@ export default function Chat() {
           {hasMessages && !isMobile && (
             <motion.div
               ref={scrollContainerRef}
-              className="scrollarea mb-6 w-full h-[42vh] rounded-2xl p-6 overflow-y-auto scroll-smooth border"
-              style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", borderColor: "rgba(255,255,255,0.10)" }}
+              className="scrollarea mb-6 w-full rounded-2xl p-6 overflow-y-auto scroll-smooth border"
+              style={{ height: 'calc(100vh - 320px)', maxHeight: '65vh', minHeight: '280px', background: "rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", borderColor: "rgba(255,255,255,0.10)" }}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
