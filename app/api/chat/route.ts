@@ -8,6 +8,14 @@ export const runtime = 'nodejs'
 
 const sql = neon(process.env.POSTGRES_URL!)
 
+// Prompts that are eligible for caching — must match the chips in page.tsx exactly
+const CACHEABLE_PROMPTS = new Set([
+  "Can you help with AI implementation?",
+  "What makes Archpoint Labs different?",
+  "Tell me about your recent projects",
+  "I'm interested in custom software development",
+])
+
 type Message = {
   role: 'user' | 'assistant' | 'system'
   content: string
@@ -106,6 +114,21 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     }
 
+    // Cache check: only applies when it's the very first message and matches a chip
+    const firstMessage = messages[0].content
+    const isCacheable = messages.length === 1 && CACHEABLE_PROMPTS.has(firstMessage)
+
+    if (isCacheable) {
+      const cached = await sql`
+        SELECT response FROM response_cache WHERE prompt = ${firstMessage} LIMIT 1
+      `
+      if (cached.length > 0) {
+        console.log(`⚡ Cache hit for: "${firstMessage}"`)
+        logConversation(sessionId, messages, cached[0].response, userInfo).catch(console.error)
+        return NextResponse.json({ message: cached[0].response })
+      }
+    }
+
     // OpenAI API call
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -141,8 +164,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Store in cache if this was a cacheable first message (fire and forget)
+    if (isCacheable) {
+      sql`
+        INSERT INTO response_cache (prompt, response)
+        VALUES (${firstMessage}, ${aiResponse})
+        ON CONFLICT (prompt) DO NOTHING
+      `.catch(err => console.error('Failed to cache response:', err))
+      console.log(`💾 Cached response for: "${firstMessage}"`)
+    }
+
     // Log conversation asynchronously (don't await to speed up response)
-    logConversation(sessionId, messages, aiResponse, userInfo).catch(err => 
+    logConversation(sessionId, messages, aiResponse, userInfo).catch(err =>
       console.error('Failed to log conversation:', err)
     )
 
