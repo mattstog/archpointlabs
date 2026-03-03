@@ -71,6 +71,9 @@ export default function Chat() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const desktopTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const mobileInputRef = useRef<HTMLInputElement>(null)
+  const [desktopInputHeight, setDesktopInputHeight] = useState(64)
 
   const examples = [
     "Can you help with AI implementation?",
@@ -245,8 +248,25 @@ export default function Chat() {
     if (input.trim() && !isLoading) {
       sendMessage(input)
       setInput("")
+      // Reset desktop textarea height
+      if (desktopTextareaRef.current) desktopTextareaRef.current.style.height = '24px'
+      setDesktopInputHeight(64)
+      // Restore focus after send
+      setTimeout(() => {
+        if (isMobile) mobileInputRef.current?.focus()
+        else desktopTextareaRef.current?.focus()
+      }, 10)
       if (isMobile) setMobileOverlayOpen(true)
     }
+  }
+
+  const handleDesktopInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+    const ta = e.target
+    ta.style.height = '0px'
+    const scrollH = Math.min(ta.scrollHeight, 96) // cap at ~4 lines
+    ta.style.height = scrollH + 'px'
+    setDesktopInputHeight(Math.max(64, scrollH + 24))
   }
 
   const handleExampleClick = (text: string) => {
@@ -443,6 +463,7 @@ export default function Chat() {
               style={{ background: "#ffffff", height: 52 }}
             >
               <input
+                ref={mobileInputRef}
                 className="flex-1 h-full px-5 bg-transparent focus:outline-none text-[#2e353e] placeholder:text-[#2e353e]/40 text-base"
                 value={input}
                 placeholder={canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : ""}
@@ -676,13 +697,17 @@ export default function Chat() {
 
           {!isMobile && (
             <motion.div
-              className="relative z-10 mb-0 xl:mb-2 rounded-full shadow-2xl"
+              className="relative z-10 mb-0 xl:mb-2 shadow-2xl"
               style={{ border: "1px solid rgba(255,255,255,0.15)" }}
               initial={false}
-              animate={arrived ? { width: 672, height: 64 } : { width: 48, height: 48 }}
+              animate={arrived
+                ? { width: 672, height: desktopInputHeight, borderRadius: desktopInputHeight > 64 ? 16 : 9999 }
+                : { width: 48, height: 48, borderRadius: 9999 }
+              }
               transition={{
                 width: { type: "spring", bounce: 0.2, duration: 1.3 },
-                height: { type: "spring", bounce: 0.2, duration: 1.3 },
+                height: { type: "spring", bounce: 0.2, duration: 0.3 },
+                borderRadius: { duration: 0.2 },
               }}
               onAnimationComplete={() => {
                 setTimeout(() => setShowLabel(true), 200)
@@ -690,20 +715,24 @@ export default function Chat() {
               }}
             >
               <div className="relative h-full w-full">
-                <div className="absolute inset-0 rounded-full z-0" style={{ background: "#ffffff" }}>
-                  <motion.form className="absolute inset-0 z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSubmit}>
-                    <input
-                      className={`h-full w-full rounded-full px-5 bg-transparent pr-20 focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 ${arrived ? "" : "pointer-events-none"}`}
+                <div className="absolute inset-0 z-0" style={{ background: "#ffffff", borderRadius: desktopInputHeight > 64 ? 16 : 9999 }}>
+                  <motion.form className="absolute inset-0 z-10 flex items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSubmit}>
+                    <textarea
+                      ref={desktopTextareaRef}
+                      rows={1}
+                      className={`flex-1 px-5 bg-transparent focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 resize-none leading-normal ${arrived ? "" : "pointer-events-none"}`}
+                      style={{ height: '24px', maxHeight: '96px', overflowY: 'auto', scrollbarWidth: 'none' }}
                       value={input}
                       placeholder={arrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached for this session") : ""}
-                      onChange={(e) => setInput(e.currentTarget.value)}
+                      onChange={handleDesktopInputChange}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
                       disabled={isLoading || !canChat}
                     />
                     {input && arrived && !isLoading && canChat && (
                       <button
                         type="button"
                         onClick={handleSubmit}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:opacity-90 hover:cursor-pointer"
+                        className="mr-2 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:opacity-90 hover:cursor-pointer"
                         style={{ background: "#ef382e" }}
                       >
                         <ArrowUp className="w-4 h-4 text-white" />
