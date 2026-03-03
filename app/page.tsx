@@ -75,6 +75,7 @@ export default function Chat() {
   const mobileInputRef = useRef<HTMLInputElement>(null)
   const [desktopInputHeight, setDesktopInputHeight] = useState(64)
   const hasAutoFocused = useRef(false)
+  const [fullyArrived, setFullyArrived] = useState(false)
 
   const examples = [
     "Can you help with AI implementation?",
@@ -716,6 +717,7 @@ export default function Chat() {
                 setTimeout(() => setShowExamples(true), 1200)
                 if (!hasAutoFocused.current) {
                   hasAutoFocused.current = true
+                  setFullyArrived(true)
                   desktopTextareaRef.current?.focus()
                 }
               }}
@@ -726,15 +728,15 @@ export default function Chat() {
                     <textarea
                       ref={desktopTextareaRef}
                       rows={1}
-                      className={`flex-1 px-5 bg-transparent focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 resize-none leading-normal ${arrived ? "" : "pointer-events-none"}`}
+                      className={`flex-1 px-5 bg-transparent focus:outline-none focus:ring-0 text-[#2e353e] placeholder:text-[#2e353e]/40 resize-none leading-normal ${fullyArrived ? "" : "pointer-events-none"}`}
                       style={{ height: '24px', maxHeight: '96px', overflowY: 'auto', scrollbarWidth: 'none' }}
                       value={input}
-                      placeholder={arrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached for this session") : ""}
+                      placeholder={fullyArrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached for this session") : ""}
                       onChange={handleDesktopInputChange}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
                       disabled={!canChat}
                     />
-                    {input && arrived && !isLoading && canChat && (
+                    {input && fullyArrived && !isLoading && canChat && (
                       <button
                         type="button"
                         onClick={handleSubmit}
