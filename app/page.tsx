@@ -315,10 +315,10 @@ export default function Chat() {
         aria-hidden
         className="fixed pointer-events-none z-0"
         style={{
-          bottom: (isMobile && !isTablet) ? "-50px" : "-110px",
-          left: (isMobile && !isTablet) ? "-50px" : "-110px",
-          width: (isMobile && !isTablet) ? "280px" : "640px",
-          height: (isMobile && !isTablet) ? "280px" : "640px",
+          bottom: (isMobile && !isTablet) ? "clamp(-60px, -8vw, -30px)" : "clamp(-130px, -8vw, -70px)",
+          left: (isMobile && !isTablet) ? "clamp(-60px, -8vw, -30px)" : "clamp(-130px, -8vw, -70px)",
+          width: (isMobile && !isTablet) ? "clamp(180px, 45vw, 300px)" : "clamp(380px, 38vw, 640px)",
+          height: (isMobile && !isTablet) ? "clamp(180px, 45vw, 300px)" : "clamp(380px, 38vw, 640px)",
           opacity: (isMobile && !isTablet) ? 0.3 : 0.5,
           maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
           WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
@@ -469,7 +469,7 @@ export default function Chat() {
         {/* Navigation */}
         <nav className="absolute top-0 inset-x-0 z-50 flex items-center justify-between px-6 pt-6 pb-4">
           <a href="https://archpointlabs.com" className="flex items-center">
-            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-16 xl:h-28 w-auto" />
+            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-14 xl:h-20 w-auto" />
           </a>
           <a
             href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
@@ -487,7 +487,7 @@ export default function Chat() {
           className="absolute inset-x-0 xl:inset-x-auto xl:top-[30%] xl:left-24 xl:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto xl:mx-0"
           style={{ top: isMobile ? (isTablet ? "18svh" : "22svh") : undefined }}
         >
-          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+          <h1 className="text-4xl md:text-5xl xl:text-5xl 2xl:text-6xl font-extrabold leading-tight tracking-tight">
             Creating <br /> What&apos;s Next.
           </h1>
           <div className="mt-3 mb-4 xl:ml-0 mx-auto w-12 h-[3px] rounded-full" style={{ background: "#ef382e" }} />
@@ -500,12 +500,12 @@ export default function Chat() {
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
           className="absolute top-0 xl:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
-          style={!isMobile ? { top: hasMessages ? "10%" : "30%", marginLeft: "21.25rem", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: "-50%" }}
-          animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: "-50%" }}
+          style={!isMobile ? { top: hasMessages ? "18%" : "30%", marginLeft: "clamp(8vw, 21.25rem, calc(50vw - 376px))", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
+          initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: "-50%", opacity: isMobile ? 1 : 0 }}
+          animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: "-50%", opacity: 1 }}
           transition={{
             y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] },
-            opacity: { delay: 1.5, duration: 0.4 },
+            opacity: isMobile ? { duration: 0 } : { delay: 1.5, duration: 0.4 },
           }}
           onAnimationComplete={() => { if (!isMobile) setArrived(true) }}
         >
@@ -513,7 +513,7 @@ export default function Chat() {
           {hasMessages && !isMobile && (
             <motion.div
               ref={scrollContainerRef}
-              className="scrollarea mb-8 w-full h-[50vh] rounded-2xl p-6 overflow-y-auto scroll-smooth border"
+              className="scrollarea mb-6 w-full h-[42vh] rounded-2xl p-6 overflow-y-auto scroll-smooth border"
               style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", borderColor: "rgba(255,255,255,0.10)" }}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
