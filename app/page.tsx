@@ -714,12 +714,17 @@ export default function Chat() {
               }}
               onAnimationComplete={() => {
                 setTimeout(() => setShowLabel(true), 200)
-                setTimeout(() => setShowExamples(true), 1200)
-                if (!hasAutoFocused.current) {
-                  hasAutoFocused.current = true
-                  setFullyArrived(true)
-                  desktopTextareaRef.current?.focus()
-                }
+                setTimeout(() => {
+                  setShowExamples(true)
+                  // Chips stagger: last chip (i=3) has 0.9s delay + 0.5s duration = ~1.4s
+                  setTimeout(() => {
+                    if (!hasAutoFocused.current) {
+                      hasAutoFocused.current = true
+                      setFullyArrived(true)
+                      desktopTextareaRef.current?.focus()
+                    }
+                  }, 1500)
+                }, 1200)
               }}
             >
               <div className="relative h-full w-full">
