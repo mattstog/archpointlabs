@@ -468,7 +468,7 @@ export default function Chat() {
                 value={input}
                 placeholder={canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : ""}
                 onChange={(e) => setInput(e.currentTarget.value)}
-                disabled={isLoading || !canChat}
+                disabled={!canChat}
               />
               {input && !isLoading && canChat && (
                 <button
@@ -727,7 +727,7 @@ export default function Chat() {
                       placeholder={arrived ? (canChat ? (remainingTurns <= 3 ? `Ask away... (${remainingTurns} left)` : "Ask away...") : "Chat limit reached for this session") : ""}
                       onChange={handleDesktopInputChange}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
-                      disabled={isLoading || !canChat}
+                      disabled={!canChat}
                     />
                     {input && arrived && !isLoading && canChat && (
                       <button
