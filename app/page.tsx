@@ -508,7 +508,7 @@ export default function Chat() {
 
         {/* Headline & Subheadline */}
         <div
-          className="absolute inset-x-0 xl:inset-x-auto xl:top-[22%] xl:left-24 xl:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto xl:mx-0"
+          className="absolute inset-x-0 xl:inset-x-auto xl:top-[30%] xl:left-24 xl:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto xl:mx-0"
           style={{
             top: isMobile ? (isTablet ? "18svh" : "22svh") : undefined,
             opacity: !isMobile && hasMessages ? 0 : 1,
