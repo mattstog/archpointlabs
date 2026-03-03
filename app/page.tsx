@@ -76,6 +76,8 @@ export default function Chat() {
   const [desktopInputHeight, setDesktopInputHeight] = useState(64)
   const hasAutoFocused = useRef(false)
   const [fullyArrived, setFullyArrived] = useState(false)
+  const heroRef = useRef<HTMLDivElement>(null)
+  const [watermarkHeight, setWatermarkHeight] = useState<string>('33vw')
 
   const examples = [
     "Can you help with AI implementation?",
@@ -317,6 +319,23 @@ export default function Chat() {
     if (isMobile && hasMessages) setMobileOverlayOpen(true)
   }, [isMobile, hasMessages])
 
+  // Keep watermark height flush to just below hero text (desktop only)
+  useEffect(() => {
+    if (isMobile) return
+    const update = () => {
+      const hero = heroRef.current
+      if (!hero) return
+      const heroBottom = hero.getBoundingClientRect().bottom
+      const available = window.innerHeight - heroBottom - 16
+      setWatermarkHeight(`${Math.max(0, available)}px`)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    if (heroRef.current) ro.observe(heroRef.current)
+    window.addEventListener('resize', update)
+    return () => { ro.disconnect(); window.removeEventListener('resize', update) }
+  }, [isMobile, hasMessages])
+
   return (
     <main className="min-h-screen w-full overflow-x-hidden">
 
@@ -340,7 +359,7 @@ export default function Chat() {
           bottom: (isMobile && !isTablet) ? "-4vw" : "-5vw",
           left: (isMobile && !isTablet) ? "-4vw" : "-5vw",
           width: (isMobile && !isTablet) ? "40vw" : "33vw",
-          height: (isMobile && !isTablet) ? "40vw" : "33vw",
+          height: (isMobile && !isTablet) ? "40vw" : watermarkHeight,
           opacity: (isMobile && !isTablet) ? 0.2 : 0.35,
           maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
           WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
@@ -508,12 +527,9 @@ export default function Chat() {
 
         {/* Headline & Subheadline */}
         <div
+          ref={heroRef}
           className="absolute inset-x-0 xl:inset-x-auto xl:top-[30%] xl:left-24 xl:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto xl:mx-0"
-          style={{
-            top: isMobile ? (isTablet ? "18svh" : "22svh") : undefined,
-            opacity: !isMobile && hasMessages ? 0 : 1,
-            transition: 'opacity 0.4s ease',
-          }}
+          style={{ top: isMobile ? (isTablet ? "18svh" : "22svh") : undefined }}
         >
           <h1 className="text-4xl md:text-5xl xl:text-5xl 2xl:text-6xl font-extrabold leading-tight tracking-tight">
             Creating <br /> What&apos;s Next.
