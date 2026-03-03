@@ -337,10 +337,10 @@ export default function Chat() {
         aria-hidden
         className="fixed pointer-events-none z-0"
         style={{
-          bottom: (isMobile && !isTablet) ? "-40px" : "-80px",
-          left: (isMobile && !isTablet) ? "-40px" : "-80px",
-          width: (isMobile && !isTablet) ? "200px" : "380px",
-          height: (isMobile && !isTablet) ? "200px" : "380px",
+          bottom: (isMobile && !isTablet) ? "-4vw" : "-5vw",
+          left: (isMobile && !isTablet) ? "-4vw" : "-5vw",
+          width: (isMobile && !isTablet) ? "40vw" : "33vw",
+          height: (isMobile && !isTablet) ? "40vw" : "33vw",
           opacity: (isMobile && !isTablet) ? 0.2 : 0.35,
           maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
           WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
