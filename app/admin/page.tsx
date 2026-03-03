@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, MessageSquare, User, Clock, Globe, ArrowUpDown, Trash2 } from 'lucide-react'
+import { Calendar, MessageSquare, User, Clock, Globe, ArrowUpDown, Trash2, Bookmark } from 'lucide-react'
 
 type Message = {
   role: 'user' | 'assistant' | 'system'
@@ -17,6 +17,7 @@ type Conversation = {
   messages: Message[]
   ai_response: string
   ts: string
+  saved?: boolean
 }
 
 const LAST_VISITED_KEY = 'admin_last_visited'
@@ -32,18 +33,20 @@ export default function AdminDashboard() {
   const [dateFilter, setDateFilter] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
   const [seenBefore, setSeenBefore] = useState<Date | null>(null)
+  const [view, setView] = useState<'inbox' | 'saved'>('inbox')
 
   useEffect(() => {
     const stored = localStorage.getItem(LAST_VISITED_KEY)
     setSeenBefore(stored ? new Date(stored) : null)
     localStorage.setItem(LAST_VISITED_KEY, new Date().toISOString())
-    fetchConversations()
+    fetchConversations('inbox')
   }, [])
 
-  const fetchConversations = async () => {
+  const fetchConversations = async (v: 'inbox' | 'saved') => {
     try {
       setLoading(true)
-      const response = await fetch('/api/conversations')
+      const url = v === 'saved' ? '/api/conversations?view=saved' : '/api/conversations'
+      const response = await fetch(url)
       if (!response.ok) throw new Error('Failed to fetch conversations')
       const data = await response.json()
       setConversations(data.conversations || [])
@@ -54,8 +57,14 @@ export default function AdminDashboard() {
     }
   }
 
+  const switchView = (v: 'inbox' | 'saved') => {
+    setView(v)
+    setSelectedConversation(null)
+    fetchConversations(v)
+  }
+
   const isUnread = (conv: Conversation) => {
-    if (!seenBefore || !conv.ts) return false
+    if (!seenBefore || !conv.ts || view === 'saved') return false
     return new Date(conv.ts) > seenBefore
   }
 
@@ -63,9 +72,22 @@ export default function AdminDashboard() {
 
   const deleteConversation = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation()
-    await fetch(`/api/conversations/${id}`, { method: 'PATCH' })
+    await fetch(`/api/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete' }) })
     setConversations(prev => prev.filter(c => c.id !== id))
     if (selectedConversation?.id === id) setSelectedConversation(null)
+  }
+
+  const saveConversation = async (conv: Conversation, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    const action = conv.saved ? 'unsave' : 'save'
+    await fetch(`/api/conversations/${conv.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
+    if (view === 'saved') {
+      setConversations(prev => prev.filter(c => c.id !== conv.id))
+      if (selectedConversation?.id === conv.id) setSelectedConversation(null)
+    } else {
+      setConversations(prev => prev.filter(c => c.id !== conv.id))
+      if (selectedConversation?.id === conv.id) setSelectedConversation(null)
+    }
   }
 
   const filteredConversations = conversations
@@ -125,11 +147,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen text-white flex items-center justify-center" style={{ background: DARK }}>
         <div className="text-center">
           <p className="mb-4" style={{ color: RED }}>Error: {error}</p>
-          <button
-            onClick={fetchConversations}
-            className="px-4 py-2 rounded-lg text-white transition hover:opacity-90"
-            style={{ background: RED }}
-          >
+          <button onClick={() => fetchConversations(view)} className="px-4 py-2 rounded-lg text-white transition hover:opacity-90" style={{ background: RED }}>
             Retry
           </button>
         </div>
@@ -145,7 +163,6 @@ export default function AdminDashboard() {
         <div className="mb-8 flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              {/* Red accent bar */}
               <div className="w-1 h-8 rounded-full" style={{ background: RED }} />
               <h1 className="text-3xl font-bold text-white">Archpoint Labs</h1>
             </div>
@@ -160,7 +177,7 @@ export default function AdminDashboard() {
             </p>
           </div>
           <button
-            onClick={fetchConversations}
+            onClick={() => fetchConversations(view)}
             className="text-sm text-white/40 hover:text-white transition px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/30"
           >
             Refresh
@@ -168,15 +185,8 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <button
-            onClick={() => setDateFilter('all')}
-            className="rounded-xl p-5 border transition-all text-left w-full"
-            style={{
-              background: dateFilter === 'all' ? 'rgba(239,56,46,0.12)' : 'rgba(255,255,255,0.04)',
-              borderColor: dateFilter === 'all' ? 'rgba(239,56,46,0.5)' : 'rgba(255,255,255,0.1)',
-            }}
-          >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <button onClick={() => setDateFilter('all')} className="rounded-xl p-5 border transition-all text-left w-full" style={{ background: dateFilter === 'all' ? 'rgba(239,56,46,0.12)' : 'rgba(255,255,255,0.04)', borderColor: dateFilter === 'all' ? 'rgba(239,56,46,0.5)' : 'rgba(255,255,255,0.1)' }}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white/40 text-xs uppercase tracking-wide mb-1">Total</p>
@@ -185,43 +195,42 @@ export default function AdminDashboard() {
               <MessageSquare className="w-8 h-8 text-white/20" />
             </div>
           </button>
-
-          <button
-            onClick={() => setDateFilter(dateFilter === 'today' ? 'all' : 'today')}
-            className="rounded-xl p-5 border transition-all text-left w-full"
-            style={{
-              background: dateFilter === 'today' ? 'rgba(239,56,46,0.12)' : 'rgba(255,255,255,0.04)',
-              borderColor: dateFilter === 'today' ? 'rgba(239,56,46,0.5)' : 'rgba(255,255,255,0.1)',
-            }}
-          >
+          <button onClick={() => setDateFilter(dateFilter === 'today' ? 'all' : 'today')} className="rounded-xl p-5 border transition-all text-left w-full" style={{ background: dateFilter === 'today' ? 'rgba(239,56,46,0.12)' : 'rgba(255,255,255,0.04)', borderColor: dateFilter === 'today' ? 'rgba(239,56,46,0.5)' : 'rgba(255,255,255,0.1)' }}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white/40 text-xs uppercase tracking-wide mb-1">Today</p>
-                <p className="text-3xl font-bold">
-                  {conversations.filter(c => c.ts && new Date(c.ts).toDateString() === new Date().toDateString()).length}
-                </p>
+                <p className="text-3xl font-bold">{conversations.filter(c => c.ts && new Date(c.ts).toDateString() === new Date().toDateString()).length}</p>
               </div>
               <Calendar className="w-8 h-8 text-white/20" />
             </div>
           </button>
-
-          <button
-            onClick={() => setDateFilter(dateFilter === 'week' ? 'all' : 'week')}
-            className="rounded-xl p-5 border transition-all text-left w-full"
-            style={{
-              background: dateFilter === 'week' ? 'rgba(239,56,46,0.12)' : 'rgba(255,255,255,0.04)',
-              borderColor: dateFilter === 'week' ? 'rgba(239,56,46,0.5)' : 'rgba(255,255,255,0.1)',
-            }}
-          >
+          <button onClick={() => setDateFilter(dateFilter === 'week' ? 'all' : 'week')} className="rounded-xl p-5 border transition-all text-left w-full" style={{ background: dateFilter === 'week' ? 'rgba(239,56,46,0.12)' : 'rgba(255,255,255,0.04)', borderColor: dateFilter === 'week' ? 'rgba(239,56,46,0.5)' : 'rgba(255,255,255,0.1)' }}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white/40 text-xs uppercase tracking-wide mb-1">This Week</p>
-                <p className="text-3xl font-bold">
-                  {conversations.filter(c => c.ts && new Date(c.ts) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}
-                </p>
+                <p className="text-3xl font-bold">{conversations.filter(c => c.ts && new Date(c.ts) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}</p>
               </div>
               <Clock className="w-8 h-8 text-white/20" />
             </div>
+          </button>
+        </div>
+
+        {/* Inbox / Saved tabs */}
+        <div className="flex items-center gap-1 mb-5 p-1 rounded-lg w-fit border border-white/10" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <button
+            onClick={() => switchView('inbox')}
+            className="px-4 py-1.5 rounded-md text-sm font-medium transition-all"
+            style={{ background: view === 'inbox' ? RED : 'transparent', color: view === 'inbox' ? '#fff' : 'rgba(255,255,255,0.4)' }}
+          >
+            Inbox
+          </button>
+          <button
+            onClick={() => switchView('saved')}
+            className="px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5"
+            style={{ background: view === 'saved' ? RED : 'transparent', color: view === 'saved' ? '#fff' : 'rgba(255,255,255,0.4)' }}
+          >
+            <Bookmark className="w-3.5 h-3.5" />
+            Saved
           </button>
         </div>
 
@@ -235,24 +244,15 @@ export default function AdminDashboard() {
             className="flex-1 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none border border-white/10 focus:border-white/30 transition text-sm"
             style={{ background: 'rgba(255,255,255,0.06)' }}
           />
-          <select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="rounded-lg px-4 py-2.5 text-white border border-white/10 focus:outline-none focus:border-white/30 transition text-sm"
-            style={{ background: '#2e353e' }}
-          >
+          <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="rounded-lg px-4 py-2.5 text-white border border-white/10 focus:outline-none focus:border-white/30 transition text-sm" style={{ background: DARK }}>
             <option value="all">All Time</option>
             <option value="today">Today</option>
             <option value="week">This Week</option>
             <option value="month">This Month</option>
           </select>
-          <div className="flex items-center gap-2 rounded-lg px-4 py-2.5 border border-white/10 text-sm" style={{ background: '#2e353e' }}>
+          <div className="flex items-center gap-2 rounded-lg px-4 py-2.5 border border-white/10 text-sm" style={{ background: DARK }}>
             <ArrowUpDown className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-transparent text-white focus:outline-none"
-            >
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="bg-transparent text-white focus:outline-none">
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
               <option value="most">Most messages</option>
@@ -265,44 +265,36 @@ export default function AdminDashboard() {
         {selectedConversation ? (
           <div className="rounded-xl p-6 border border-white/10" style={{ background: 'rgba(255,255,255,0.04)' }}>
             <div className="flex items-center justify-between mb-5">
-              <button
-                onClick={() => setSelectedConversation(null)}
-                className="text-sm transition hover:opacity-70 flex items-center gap-1"
-                style={{ color: RED }}
-              >
+              <button onClick={() => setSelectedConversation(null)} className="text-sm transition hover:opacity-70 flex items-center gap-1" style={{ color: RED }}>
                 ← Back to list
               </button>
-              <button
-                onClick={(e) => deleteConversation(selectedConversation.id, e)}
-                className="flex items-center gap-1.5 text-xs text-white/30 hover:text-red-400 transition px-3 py-1.5 rounded-lg border border-white/10 hover:border-red-500/30"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => saveConversation(selectedConversation, e)}
+                  className="flex items-center gap-1.5 text-xs transition px-3 py-1.5 rounded-lg border border-white/10"
+                  style={selectedConversation.saved ? { color: RED, borderColor: 'rgba(239,56,46,0.3)', background: 'rgba(239,56,46,0.1)' } : { color: 'rgba(255,255,255,0.3)' }}
+                >
+                  <Bookmark className="w-3.5 h-3.5" style={selectedConversation.saved ? { fill: RED } : {}} />
+                  {selectedConversation.saved ? 'Saved' : 'Save'}
+                </button>
+                <button
+                  onClick={(e) => deleteConversation(selectedConversation.id, e)}
+                  className="flex items-center gap-1.5 text-xs text-white/30 hover:text-red-400 transition px-3 py-1.5 rounded-lg border border-white/10 hover:border-red-500/30"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </div>
             </div>
 
             <h2 className="text-lg font-semibold mb-4 text-white">Conversation Details</h2>
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 text-xs text-white/40">
-              <div className="flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5" />
-                {selectedConversation.session_id.slice(0, 10)}...
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5" />
-                {selectedConversation.ip}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                {formatDate(selectedConversation)}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5" />
-                {selectedConversation.message_count} messages
-              </div>
+              <div className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{selectedConversation.session_id.slice(0, 10)}...</div>
+              <div className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" />{selectedConversation.ip}</div>
+              <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{formatDate(selectedConversation)}</div>
+              <div className="flex items-center gap-1.5"><MessageSquare className="w-3.5 h-3.5" />{selectedConversation.message_count} messages</div>
             </div>
 
-            {/* Chat bubbles */}
             <div className="flex flex-col gap-1.5">
               {[
                 ...selectedConversation.messages,
@@ -311,15 +303,7 @@ export default function AdminDashboard() {
                 const isUser = message.role === 'user'
                 return (
                   <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className="max-w-[75%] px-3 py-2 rounded-2xl"
-                      style={{
-                        background: isUser ? 'rgba(239,56,46,0.2)' : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${isUser ? 'rgba(239,56,46,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                        borderBottomRightRadius: isUser ? 4 : undefined,
-                        borderBottomLeftRadius: isUser ? undefined : 4,
-                      }}
-                    >
+                    <div className="max-w-[75%] px-3 py-2 rounded-2xl" style={{ background: isUser ? 'rgba(239,56,46,0.2)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isUser ? 'rgba(239,56,46,0.3)' : 'rgba(255,255,255,0.08)'}`, borderBottomRightRadius: isUser ? 4 : undefined, borderBottomLeftRadius: isUser ? undefined : 4 }}>
                       <p className="text-[10px] font-semibold mb-0.5" style={{ color: isUser ? RED : 'rgba(255,255,255,0.35)', textAlign: isUser ? 'right' : 'left' }}>
                         {isUser ? 'User' : 'Milo'}
                       </p>
@@ -333,7 +317,9 @@ export default function AdminDashboard() {
         ) : (
           <div className="space-y-3">
             {filteredConversations.length === 0 ? (
-              <div className="text-center py-12 text-white/30">No conversations found</div>
+              <div className="text-center py-12 text-white/30">
+                {view === 'saved' ? 'No saved conversations' : 'No conversations found'}
+              </div>
             ) : (
               filteredConversations.map((conversation) => {
                 const unread = isUnread(conversation)
@@ -342,10 +328,7 @@ export default function AdminDashboard() {
                     key={conversation.id}
                     onClick={() => setSelectedConversation(conversation)}
                     className="relative rounded-xl p-5 border cursor-pointer transition group"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      borderColor: unread ? 'rgba(239,56,46,0.35)' : 'rgba(255,255,255,0.08)',
-                    }}
+                    style={{ background: 'rgba(255,255,255,0.04)', borderColor: unread ? 'rgba(239,56,46,0.35)' : 'rgba(255,255,255,0.08)' }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = unread ? 'rgba(239,56,46,0.6)' : 'rgba(255,255,255,0.2)')}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = unread ? 'rgba(239,56,46,0.35)' : 'rgba(255,255,255,0.08)')}
                   >
@@ -357,6 +340,14 @@ export default function AdminDashboard() {
                         </span>
                       )}
                       <button
+                        onClick={(e) => saveConversation(conversation, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all"
+                        style={{ color: conversation.saved ? RED : 'rgba(255,255,255,0.3)' }}
+                        title={conversation.saved ? 'Unsave' : 'Save'}
+                      >
+                        <Bookmark className="w-3.5 h-3.5" style={conversation.saved ? { fill: RED } : {}} />
+                      </button>
+                      <button
                         onClick={(e) => deleteConversation(conversation.id, e)}
                         className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
                         title="Delete conversation"
@@ -364,27 +355,15 @@ export default function AdminDashboard() {
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <div className="pr-16">
+                    <div className="pr-24">
                       <h3 className="text-sm font-semibold mb-2 text-white/90 group-hover:text-white transition">
                         {getConversationPreview(conversation.messages)}
                       </h3>
                       <div className="flex flex-wrap gap-4 text-xs text-white/30">
-                        <div className="flex items-center gap-1">
-                          <User className="w-3.5 h-3.5" />
-                          {conversation.session_id.slice(0, 8)}...
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Globe className="w-3.5 h-3.5" />
-                          {conversation.ip}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {formatDate(conversation)}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          {conversation.message_count} messages
-                        </div>
+                        <div className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{conversation.session_id.slice(0, 8)}...</div>
+                        <div className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" />{conversation.ip}</div>
+                        <div className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatDate(conversation)}</div>
+                        <div className="flex items-center gap-1"><MessageSquare className="w-3.5 h-3.5" />{conversation.message_count} messages</div>
                       </div>
                     </div>
                   </div>

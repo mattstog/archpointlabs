@@ -6,14 +6,16 @@ export const runtime = 'nodejs'
 
 const sql = neon(process.env.POSTGRES_URL!)
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    // Fetch all conversations ordered by most recent first (by ID since created_at may not exist)
+    const view = req.nextUrl.searchParams.get('view')
+    const saved = view === 'saved'
+
     const conversations = await sql`
       SELECT *
       FROM conversations
       WHERE active IS NOT FALSE
+        AND (saved = ${saved} OR (${!saved} AND saved IS NULL))
       ORDER BY id DESC
       LIMIT 1000
     `
