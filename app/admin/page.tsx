@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, MessageSquare, User, Clock, Globe, ArrowUpDown } from 'lucide-react'
+import { Calendar, MessageSquare, User, Clock, Globe, ArrowUpDown, Trash2 } from 'lucide-react'
 
 type Message = {
   role: 'user' | 'assistant' | 'system'
@@ -60,6 +60,13 @@ export default function AdminDashboard() {
   }
 
   const unreadCount = conversations.filter(isUnread).length
+
+  const deleteConversation = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    await fetch(`/api/conversations/${id}`, { method: 'PATCH' })
+    setConversations(prev => prev.filter(c => c.id !== id))
+    if (selectedConversation?.id === id) setSelectedConversation(null)
+  }
 
   const filteredConversations = conversations
     .filter(conv => {
@@ -257,13 +264,22 @@ export default function AdminDashboard() {
         {/* Conversations List / Detail */}
         {selectedConversation ? (
           <div className="rounded-xl p-6 border border-white/10" style={{ background: 'rgba(255,255,255,0.04)' }}>
-            <button
-              onClick={() => setSelectedConversation(null)}
-              className="mb-5 text-sm transition hover:opacity-70 flex items-center gap-1"
-              style={{ color: RED }}
-            >
-              ← Back to list
-            </button>
+            <div className="flex items-center justify-between mb-5">
+              <button
+                onClick={() => setSelectedConversation(null)}
+                className="text-sm transition hover:opacity-70 flex items-center gap-1"
+                style={{ color: RED }}
+              >
+                ← Back to list
+              </button>
+              <button
+                onClick={(e) => deleteConversation(selectedConversation.id, e)}
+                className="flex items-center gap-1.5 text-xs text-white/30 hover:text-red-400 transition px-3 py-1.5 rounded-lg border border-white/10 hover:border-red-500/30"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete
+              </button>
+            </div>
 
             <h2 className="text-lg font-semibold mb-4 text-white">Conversation Details</h2>
 
@@ -333,12 +349,21 @@ export default function AdminDashboard() {
                     onMouseEnter={e => (e.currentTarget.style.borderColor = unread ? 'rgba(239,56,46,0.6)' : 'rgba(255,255,255,0.2)')}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = unread ? 'rgba(239,56,46,0.35)' : 'rgba(255,255,255,0.08)')}
                   >
-                    {unread && (
-                      <span className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border" style={{ background: 'rgba(239,56,46,0.15)', borderColor: 'rgba(239,56,46,0.3)', color: RED }}>
-                        <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: RED }}></span>
-                        New
-                      </span>
-                    )}
+                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                      {unread && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border" style={{ background: 'rgba(239,56,46,0.15)', borderColor: 'rgba(239,56,46,0.3)', color: RED }}>
+                          <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: RED }}></span>
+                          New
+                        </span>
+                      )}
+                      <button
+                        onClick={(e) => deleteConversation(conversation.id, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                        title="Delete conversation"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                     <div className="pr-16">
                       <h3 className="text-sm font-semibold mb-2 text-white/90 group-hover:text-white transition">
                         {getConversationPreview(conversation.messages)}

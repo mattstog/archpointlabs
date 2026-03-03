@@ -13,6 +13,7 @@ export async function GET(_req: NextRequest) {
     const conversations = await sql`
       SELECT *
       FROM conversations
+      WHERE active IS NOT FALSE
       ORDER BY id DESC
       LIMIT 1000
     `
