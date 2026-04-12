@@ -326,7 +326,8 @@ export default function Chat() {
       const hero = heroRef.current
       if (!hero) return
       const heroBottom = hero.getBoundingClientRect().bottom
-      const available = window.innerHeight - heroBottom - 16
+      const bottomOffset = window.innerWidth * 0.05 // matches bottom: -5vw, so top edge lands just below hero
+      const available = window.innerHeight - heroBottom - 16 + bottomOffset
       setWatermarkHeight(`${Math.max(0, available)}px`)
     }
     update()
@@ -358,7 +359,7 @@ export default function Chat() {
         style={{
           bottom: (isMobile && !isTablet) ? "-4vw" : "-5vw",
           left: (isMobile && !isTablet) ? "-4vw" : "-5vw",
-          width: (isMobile && !isTablet) ? "40vw" : "33vw",
+          width: (isMobile && !isTablet) ? "40vw" : watermarkHeight,
           height: (isMobile && !isTablet) ? "40vw" : watermarkHeight,
           opacity: (isMobile && !isTablet) ? 0.2 : 0.35,
           maskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
@@ -512,7 +513,7 @@ export default function Chat() {
         {/* Navigation */}
         <nav className="absolute top-0 inset-x-0 z-50 flex items-center justify-between px-6 pt-6 pb-4">
           <a href="https://archpointlabs.com" className="flex items-center">
-            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-14 xl:h-20 w-auto" />
+            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="w-auto" style={{ height: isMobile ? '3.5rem' : '5rem' }} />
           </a>
           <a
             href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
@@ -528,22 +529,31 @@ export default function Chat() {
         {/* Headline & Subheadline */}
         <div
           ref={heroRef}
-          className="absolute inset-x-0 xl:inset-x-auto xl:top-[30%] xl:left-24 xl:text-left text-center text-white max-w-xl pointer-events-none z-0 mx-auto xl:mx-0"
-          style={{ top: isMobile ? (isTablet ? "18svh" : "22svh") : undefined }}
+          className="absolute text-white max-w-xl pointer-events-none z-0"
+          style={!isMobile
+            ? { top: '30%', left: '96px', textAlign: 'left' }
+            : { top: isTablet ? "18svh" : "22svh", left: 0, right: 0, textAlign: 'center', margin: '0 auto' }
+          }
         >
-          <h1 className="text-4xl md:text-5xl xl:text-5xl 2xl:text-6xl font-extrabold leading-tight tracking-tight">
+          <h1 className="text-4xl md:text-5xl 2xl:text-6xl font-extrabold leading-tight tracking-tight">
             Creating <br /> What&apos;s Next.
           </h1>
-          <div className="mt-3 mb-4 xl:ml-0 mx-auto w-12 h-[3px] rounded-full" style={{ background: "#ef382e" }} />
+          <div
+            className="mt-3 mb-4 w-12 h-[3px] rounded-full"
+            style={{ background: "#ef382e", marginLeft: isMobile ? 'auto' : '0', marginRight: isMobile ? 'auto' : '0' }}
+          />
           {(!isMobile || isTablet) && (
-            <p className="text-base px-6 lg:px-0 leading-relaxed text-white/70">{SUBHEAD}</p>
+            <p
+              className="text-base leading-relaxed text-white/70"
+              style={{ paddingLeft: isMobile ? '1.5rem' : 0, paddingRight: isMobile ? '1.5rem' : 0 }}
+            >{SUBHEAD}</p>
           )}
         </div>
 
         {/* Chat wrapper */}
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
-          className="absolute top-0 xl:top-[30%] left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
+          className="absolute top-0 left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
           style={!isMobile ? { top: hasMessages ? "13%" : "30%", marginLeft: "clamp(8vw, 21.25rem, calc(50vw - 376px))", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
           initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: "-50%", opacity: isMobile ? 1 : 0 }}
           animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: "-50%", opacity: 1 }}
