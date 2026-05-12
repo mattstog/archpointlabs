@@ -42,14 +42,12 @@ function getSystemPrompt(): string {
   try {
     const promptPath = path.join(process.cwd(), 'prompts', 'system-prompt.md')
     const promptContent = fs.readFileSync(promptPath, 'utf8')
-    const lines = promptContent.split('\n')
-    const contentStart = lines.findIndex(line => line.startsWith('You are the AI'))
-    return lines.slice(contentStart).join('\n').replace(/#+\s*/g, '').replace(/\*\*/g, '')
+    return promptContent.trim()
   } catch (error) {
     console.warn('Could not load system prompt file, using default:', error)
-    return `You are Milo, an AI consultant for Archpoint Labs, a cutting-edge consulting firm specializing in AI transformation. 
-    You help businesses understand how AI can solve their challenges through strategy, implementation, automation, and training. 
-    Be professional, helpful, and solution-oriented while guiding potential clients toward deeper engagement with our services.`
+    return `You are Milo, the AI sales assistant for Archpoint Labs.
+    Help businesses understand how custom software, AI implementation, automation, and data tools can solve their operational problems.
+    Be professional, concise, and consultative while guiding qualified prospects toward scheduling a call or sharing contact information.`
   }
 }
 
