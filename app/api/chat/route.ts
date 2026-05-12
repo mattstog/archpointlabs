@@ -29,6 +29,15 @@ type UserInfo = {
   timestamp?: string 
 }
 
+type ChatRequest = {
+  messages: Message[]
+  sessionId: string
+  stream?: boolean
+  skipCache?: boolean
+  refreshCache?: boolean
+  skipLog?: boolean
+}
+
 function getSystemPrompt(): string {
   try {
     const promptPath = path.join(process.cwd(), 'prompts', 'system-prompt.md')
@@ -42,6 +51,16 @@ function getSystemPrompt(): string {
     You help businesses understand how AI can solve their challenges through strategy, implementation, automation, and training. 
     Be professional, helpful, and solution-oriented while guiding potential clients toward deeper engagement with our services.`
   }
+}
+
+function validateChatRequest(body: unknown): body is ChatRequest {
+  if (!body || typeof body !== 'object') return false
+  const candidate = body as Partial<ChatRequest>
+  return (
+    Array.isArray(candidate.messages) &&
+    typeof candidate.sessionId === 'string' &&
+    candidate.messages.every((m) => Boolean(m?.role && m?.content))
+  )
 }
 
 function toResponsesInput(messages: Message[]) {
@@ -75,6 +94,18 @@ function getResponseText(data: unknown): string {
     .map((content) => content.text)
     .join('')
     .trim()
+}
+
+function createOpenAIRequestBody(systemPrompt: string, messages: Message[], stream = false) {
+  return {
+    model: OPENAI_MODEL,
+    instructions: systemPrompt,
+    input: toResponsesInput(messages),
+    max_output_tokens: 1000,
+    reasoning: { effort: 'low' },
+    text: { verbosity: 'low' },
+    stream,
+  }
 }
 
 async function logConversation(sessionId: string, messages: Message[], response: string, userInfo?: UserInfo) {
@@ -112,34 +143,37 @@ async function logConversation(sessionId: string, messages: Message[], response:
   }
 }
 
+async function upsertCachedResponse(prompt: string, response: string) {
+  await sql`
+    INSERT INTO response_cache (prompt, response)
+    VALUES (${prompt}, ${response})
+    ON CONFLICT (prompt) DO UPDATE SET response = EXCLUDED.response
+  `
+}
+
+async function callOpenAI(systemPrompt: string, messages: Message[], stream = false) {
+  return fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(createOpenAIRequestBody(systemPrompt, messages, stream)),
+  })
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     
-    // Validate request body
-    if (!body.messages || !Array.isArray(body.messages)) {
+    if (!validateChatRequest(body)) {
       return NextResponse.json(
-        { error: 'Invalid request: messages array required' },
+        { error: 'Invalid request: messages and sessionId required' },
         { status: 400 }
       )
     }
 
-    if (!body.sessionId || typeof body.sessionId !== 'string') {
-      return NextResponse.json(
-        { error: 'Invalid request: sessionId required' },
-        { status: 400 }
-      )
-    }
-
-    const { messages, sessionId } = body as { messages: Message[], sessionId: string }
-    
-    // Validate messages format
-    if (messages.some(m => !m.role || !m.content)) {
-      return NextResponse.json(
-        { error: 'Invalid message format' },
-        { status: 400 }
-      )
-    }
+    const { messages, sessionId, stream = false, skipCache = false, refreshCache = false, skipLog = false } = body
 
     const systemPrompt = getSystemPrompt()
 
@@ -151,34 +185,31 @@ export async function POST(req: NextRequest) {
 
     // Cache check: only applies when it's the very first message and matches a chip
     const firstMessage = messages[0].content
-    const isCacheable = messages.length === 1 && CACHEABLE_PROMPTS.has(firstMessage)
+    const isPromptCacheable = messages.length === 1 && CACHEABLE_PROMPTS.has(firstMessage)
+    const shouldReadCache = isPromptCacheable && !skipCache && !refreshCache
+    const shouldWriteCache = isPromptCacheable && !skipCache
 
-    if (isCacheable) {
+    if (shouldReadCache) {
       const cached = await sql`
         SELECT response FROM response_cache WHERE prompt = ${firstMessage} LIMIT 1
       `
       if (cached.length > 0) {
+        const cachedResponse = cached[0].response
         console.log(`⚡ Cache hit for: "${firstMessage}"`)
-        logConversation(sessionId, messages, cached[0].response, userInfo).catch(console.error)
-        return NextResponse.json({ message: cached[0].response })
+        if (!skipLog) logConversation(sessionId, messages, cachedResponse, userInfo).catch(console.error)
+        if (stream) {
+          return new Response(cachedResponse, {
+            headers: {
+              'Content-Type': 'text/plain; charset=utf-8',
+              'Cache-Control': 'no-cache, no-transform',
+            },
+          })
+        }
+        return NextResponse.json({ message: cachedResponse })
       }
     }
 
-    const openaiRes = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        instructions: systemPrompt,
-        input: toResponsesInput(messages),
-        max_output_tokens: 1000,
-        reasoning: { effort: 'low' },
-        text: { verbosity: 'low' },
-      }),
-    })
+    const openaiRes = await callOpenAI(systemPrompt, messages, stream)
 
     if (!openaiRes.ok) {
       const errorData = await openaiRes.json().catch(() => ({}))
@@ -187,6 +218,75 @@ export async function POST(req: NextRequest) {
         { error: 'AI service temporarily unavailable' },
         { status: 503 }
       )
+    }
+
+    if (stream) {
+      if (!openaiRes.body) {
+        return NextResponse.json(
+          { error: 'Failed to stream response' },
+          { status: 500 }
+        )
+      }
+
+      const decoder = new TextDecoder()
+      const encoder = new TextEncoder()
+      const reader = openaiRes.body.getReader()
+      let buffer = ''
+      let aiResponse = ''
+
+      const streamBody = new ReadableStream({
+        async pull(controller) {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) {
+              if (shouldWriteCache && aiResponse) {
+                upsertCachedResponse(firstMessage, aiResponse)
+                  .then(() => console.log(`💾 Cached response for: "${firstMessage}"`))
+                  .catch(err => console.error('Failed to cache response:', err))
+              }
+              if (!skipLog && aiResponse) {
+                logConversation(sessionId, messages, aiResponse, userInfo).catch(err =>
+                  console.error('Failed to log conversation:', err)
+                )
+              }
+              controller.close()
+              return
+            }
+
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() ?? ''
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue
+              const payload = line.slice(6).trim()
+              if (!payload || payload === '[DONE]') continue
+
+              try {
+                const event = JSON.parse(payload) as { type?: string; delta?: string; text?: string; response?: unknown }
+                if (event.type === 'response.output_text.delta' && typeof event.delta === 'string') {
+                  aiResponse += event.delta
+                  controller.enqueue(encoder.encode(event.delta))
+                } else if (event.type === 'response.completed' && !aiResponse) {
+                  aiResponse = getResponseText(event.response)
+                }
+              } catch (error) {
+                console.error('Failed to parse OpenAI stream event:', error)
+              }
+            }
+          }
+        },
+        cancel() {
+          reader.cancel().catch(console.error)
+        },
+      })
+
+      return new Response(streamBody, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+        },
+      })
     }
 
     const data = await openaiRes.json()
@@ -201,17 +301,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Store in cache if this was a cacheable first message (fire and forget)
-    if (isCacheable) {
-      sql`
-        INSERT INTO response_cache (prompt, response)
-        VALUES (${firstMessage}, ${aiResponse})
-        ON CONFLICT (prompt) DO NOTHING
-      `.catch(err => console.error('Failed to cache response:', err))
+    if (shouldWriteCache) {
+      upsertCachedResponse(firstMessage, aiResponse).catch(err => console.error('Failed to cache response:', err))
       console.log(`💾 Cached response for: "${firstMessage}"`)
     }
 
     // Log conversation asynchronously (don't await to speed up response)
-    logConversation(sessionId, messages, aiResponse, userInfo).catch(err =>
+    if (!skipLog) logConversation(sessionId, messages, aiResponse, userInfo).catch(err =>
       console.error('Failed to log conversation:', err)
     )
 

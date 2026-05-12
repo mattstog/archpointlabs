@@ -235,11 +235,29 @@ export default function Chat() {
         body: JSON.stringify({
           sessionId,
           messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+          stream: true,
         }),
       })
       if (!response.ok) throw new Error("Failed to get response")
-      const data = await response.json()
-      setMessages([...newMessages, { id: (Date.now() + 1).toString(), role: "assistant", content: data.message }])
+      if (!response.body) throw new Error("Failed to stream response")
+
+      const assistantId = (Date.now() + 1).toString()
+      setMessages([...newMessages, { id: assistantId, role: "assistant", content: "" }])
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let assistantMessage = ""
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        assistantMessage += decoder.decode(value, { stream: true })
+        setMessages([...newMessages, { id: assistantId, role: "assistant", content: assistantMessage }])
+      }
+
+      assistantMessage += decoder.decode()
+      setMessages([...newMessages, { id: assistantId, role: "assistant", content: assistantMessage }])
     } catch {
       setMessages([...newMessages, { id: (Date.now() + 1).toString(), role: "assistant", content: "Sorry, I encountered an error. Please try again." }])
     } finally {

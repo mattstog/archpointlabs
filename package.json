@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "smoke:chat": "node --env-file=.env.local scripts/chat-smoke-test.mjs",
+    "refresh:chat-cache": "node --env-file=.env.local scripts/refresh-chat-cache.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.24",
