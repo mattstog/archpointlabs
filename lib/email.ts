@@ -2,8 +2,26 @@
 import { Resend } from 'resend'
 import { neon } from '@neondatabase/serverless'
 
-const sql = neon(process.env.POSTGRES_URL!)
-const resend = new Resend(process.env.RESEND_API_KEY!)
+let sqlClient: ReturnType<typeof neon> | null = null
+let resendClient: Resend | null = null
+
+function getSql() {
+  if (!sqlClient) {
+    const postgresUrl = process.env.POSTGRES_URL
+    if (!postgresUrl) throw new Error('POSTGRES_URL is required to fetch conversations')
+    sqlClient = neon(postgresUrl)
+  }
+  return sqlClient
+}
+
+function getResend() {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) throw new Error('RESEND_API_KEY is required to send digest emails')
+    resendClient = new Resend(apiKey)
+  }
+  return resendClient
+}
 
 type Message = {
   role: 'user' | 'assistant' | 'system'
@@ -27,6 +45,7 @@ type Conversation = {
 export async function getRecentConversations(): Promise<Conversation[]> {
   try {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const sql = getSql()
 
     const conversations = await sql`
       SELECT
@@ -179,6 +198,7 @@ export async function sendDailyDigest(): Promise<{ success: boolean; message: st
       </html>
     `
 
+    const resend = getResend()
     const { data, error } = await resend.emails.send({
       from: 'Archpoint Labs <notifications@archpointlabs.com>',
       to: ['matt@archpointlabs.com'],

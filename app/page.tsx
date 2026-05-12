@@ -1,5 +1,6 @@
 "use client"
 import type React from "react"
+import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
 import { motion } from "motion/react"
 import { ArrowUp, X, MessageCircle } from "lucide-react"
@@ -312,7 +313,6 @@ export default function Chat() {
   const hasMessages = messages.length > 0
   const isMobile = useIsMobile()
   const isTablet = useIsTablet()
-  const examplesToUse = isMobile ? examplesForMobile : examples
 
   // Auto-open overlay when chat starts on mobile; stays open by default
   useEffect(() => {
@@ -366,7 +366,7 @@ export default function Chat() {
           WebkitMaskImage: "radial-gradient(ellipse at bottom left, black 0%, transparent 92%)",
         }}
       >
-        <img src="/logos/AP Icon -White.svg" alt="" className="w-full h-full object-contain" />
+        <Image src="/logos/AP Icon -White.svg" alt="" fill className="object-contain" sizes="40vw" />
       </div>
 
       {/* Subtle top accent line */}
@@ -401,7 +401,7 @@ export default function Chat() {
           {/* Mini nav */}
           <div className="relative z-10 flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-white/10">
             <a href="https://archpointlabs.com" className="flex items-center">
-              <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="h-14 w-auto" />
+              <Image src="/logos/AP Logo -White.svg" alt="Archpoint Labs" width={99} height={80} className="h-14 w-auto" priority />
             </a>
             <div className="flex items-center gap-2">
               <a
@@ -513,7 +513,7 @@ export default function Chat() {
         {/* Navigation */}
         <nav className="absolute top-0 inset-x-0 z-50 flex items-center justify-between px-6 pt-6 pb-4">
           <a href="https://archpointlabs.com" className="flex items-center">
-            <img src="/logos/AP Logo -White.svg" alt="Archpoint Labs" className="w-auto" style={{ height: isMobile ? '3.5rem' : '5rem' }} />
+            <Image src="/logos/AP Logo -White.svg" alt="Archpoint Labs" width={99} height={80} className="w-auto" style={{ height: isMobile ? '3.5rem' : '5rem' }} priority />
           </a>
           <a
             href="https://calendar.app.google/Y7DRMz8GjakjuGf79"
@@ -529,7 +529,7 @@ export default function Chat() {
         {/* Headline & Subheadline */}
         <div
           ref={heroRef}
-          className="absolute text-white max-w-xl pointer-events-none z-0"
+          className="absolute text-white max-w-[31.25rem] 2xl:max-w-xl pointer-events-none z-0"
           style={!isMobile
             ? { top: '30%', left: '96px', textAlign: 'left' }
             : { top: isTablet ? "18svh" : "22svh", left: 0, right: 0, textAlign: 'center', margin: '0 auto' }
@@ -553,10 +553,10 @@ export default function Chat() {
         {/* Chat wrapper */}
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
-          className="absolute top-0 left-1/2 isolate flex flex-col items-center justify-center w-full max-w-[672px] px-4"
-          style={!isMobile ? { top: hasMessages ? "13%" : "30%", marginLeft: "clamp(8vw, 21.25rem, calc(50vw - 376px))", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
-          initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: "-50%", opacity: isMobile ? 1 : 0 }}
-          animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: "-50%", opacity: 1 }}
+          className={`absolute top-0 isolate flex flex-col items-center justify-center w-full px-4 ${isMobile ? "left-1/2 max-w-[672px]" : "max-w-[560px]"}`}
+          style={!isMobile ? { top: hasMessages ? "13%" : "30%", right: "clamp(24px, 5vw, 72px)", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
+          initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: isMobile ? "-50%" : 0, opacity: isMobile ? 1 : 0 }}
+          animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: isMobile ? "-50%" : 0, opacity: 1 }}
           transition={{
             y: isMobile ? { duration: 0 } : { delay: 1.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] },
             opacity: isMobile ? { duration: 0 } : { delay: 1.5, duration: 0.4 },
@@ -734,7 +734,7 @@ export default function Chat() {
               style={{ border: "1px solid rgba(255,255,255,0.15)" }}
               initial={false}
               animate={arrived
-                ? { width: 672, height: desktopInputHeight, borderRadius: desktopInputHeight > 64 ? 16 : 9999 }
+                ? { width: "min(560px, calc(100vw - 48px))", height: desktopInputHeight, borderRadius: desktopInputHeight > 64 ? 16 : 9999 }
                 : { width: 48, height: 48, borderRadius: 9999 }
               }
               transition={{
