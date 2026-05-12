@@ -586,7 +586,7 @@ export default function Chat() {
             <motion.div
               ref={scrollContainerRef}
               className="scrollarea mb-6 w-full rounded-2xl p-6 overflow-y-auto scroll-smooth border"
-              style={{ height: 'calc(100vh - 320px)', maxHeight: '65vh', minHeight: '280px', background: "rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", borderColor: "rgba(255,255,255,0.10)" }}
+              style={{ maxHeight: 'min(65vh, calc(100vh - 320px))', background: "rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", borderColor: "rgba(255,255,255,0.10)" }}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
