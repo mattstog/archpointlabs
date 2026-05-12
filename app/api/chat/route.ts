@@ -16,6 +16,8 @@ const CACHEABLE_PROMPTS = new Set([
   "I'm interested in custom software development",
 ])
 
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5.4-mini'
+
 type Message = {
   role: 'user' | 'assistant' | 'system'
   content: string
@@ -40,6 +42,39 @@ function getSystemPrompt(): string {
     You help businesses understand how AI can solve their challenges through strategy, implementation, automation, and training. 
     Be professional, helpful, and solution-oriented while guiding potential clients toward deeper engagement with our services.`
   }
+}
+
+function toResponsesInput(messages: Message[]) {
+  return messages
+    .filter((message) => message.role === 'user' || message.role === 'assistant')
+    .map((message) => ({
+      role: message.role,
+      content: message.content,
+    }))
+}
+
+function getResponseText(data: unknown): string {
+  if (!data || typeof data !== 'object') return ''
+
+  const response = data as {
+    output_text?: string
+    output?: Array<{
+      type?: string
+      content?: Array<{
+        type?: string
+        text?: string
+      }>
+    }>
+  }
+
+  if (typeof response.output_text === 'string') return response.output_text.trim()
+
+  return (response.output ?? [])
+    .flatMap((item) => item.content ?? [])
+    .filter((content) => content.type === 'output_text' && typeof content.text === 'string')
+    .map((content) => content.text)
+    .join('')
+    .trim()
 }
 
 async function logConversation(sessionId: string, messages: Message[], response: string, userInfo?: UserInfo) {
@@ -129,18 +164,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // OpenAI API call
-    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openaiRes = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'system', content: systemPrompt }, ...messages],
-        max_tokens: 1000,
-        temperature: 0.7,
+        model: OPENAI_MODEL,
+        instructions: systemPrompt,
+        input: toResponsesInput(messages),
+        max_output_tokens: 1000,
+        reasoning: { effort: 'low' },
+        text: { verbosity: 'low' },
       }),
     })
 
@@ -154,7 +190,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await openaiRes.json()
-    const aiResponse = data?.choices?.[0]?.message?.content ?? ''
+    const aiResponse = getResponseText(data)
 
     if (!aiResponse) {
       console.error('Empty response from OpenAI')
