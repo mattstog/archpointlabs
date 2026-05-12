@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "smoke:chat": "node --env-file=.env.local scripts/chat-smoke-test.mjs",
-    "refresh:chat-cache": "node --env-file=.env.local scripts/refresh-chat-cache.mjs"
+    "refresh:chat-cache": "node --env-file=.env.local scripts/refresh-chat-cache.mjs",
+    "verify:prod": "node --env-file=.env.local scripts/verify-production.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.24",

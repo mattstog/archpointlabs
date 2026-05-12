@@ -60,6 +60,7 @@ export default function AdminDashboard() {
   const switchView = (v: 'inbox' | 'saved') => {
     setView(v)
     setSelectedConversation(null)
+    if (v === 'saved') setDateFilter('all')
     fetchConversations(v)
   }
 
