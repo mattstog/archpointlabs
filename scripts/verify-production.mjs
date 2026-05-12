@@ -6,6 +6,8 @@ const execFileAsync = promisify(execFile)
 const repo = process.env.GITHUB_REPOSITORY || 'Archpoint-Labs/archpointlabs'
 const prodUrl = process.env.CHAT_PROD_BASE_URL || 'https://www.archpointlabs.com'
 const vercelProject = process.env.VERCEL_PROJECT_NAME || 'archpointlabs'
+const waitSeconds = Number.parseInt(process.env.VERIFY_PROD_WAIT_SECONDS || '0', 10)
+const pollIntervalMs = 10_000
 
 async function getCurrentSha() {
   if (process.env.GIT_SHA) return process.env.GIT_SHA
@@ -13,15 +15,18 @@ async function getCurrentSha() {
   return stdout.trim()
 }
 
-async function requireVercelStatus(sha) {
+async function getVercelStatus(sha) {
   const response = await fetch(`https://api.github.com/repos/${repo}/commits/${sha}/status`)
   if (!response.ok) {
     throw new Error(`GitHub status check failed with ${response.status}: ${await response.text()}`)
   }
 
   const data = await response.json()
-  const vercelStatus = data.statuses?.find((status) => status.context?.startsWith('Vercel'))
+  return data.statuses?.find((status) => status.context?.startsWith('Vercel'))
+}
 
+async function requireVercelStatus(sha) {
+  const vercelStatus = await getVercelStatus(sha)
   if (!vercelStatus) {
     throw new Error(`No Vercel status found for ${sha.slice(0, 7)}`)
   }
@@ -33,6 +38,32 @@ async function requireVercelStatus(sha) {
   return {
     description: vercelStatus.description,
     targetUrl: vercelStatus.target_url,
+  }
+}
+
+async function waitForVercelStatus(sha) {
+  const deadline = Date.now() + Math.max(waitSeconds, 0) * 1000
+  let lastDescription = 'No Vercel status found yet'
+
+  while (true) {
+    const vercelStatus = await getVercelStatus(sha)
+    if (vercelStatus?.state === 'success') {
+      return {
+        description: vercelStatus.description,
+        targetUrl: vercelStatus.target_url,
+      }
+    }
+
+    if (vercelStatus) {
+      lastDescription = `${vercelStatus.state}: ${vercelStatus.description}`
+    }
+
+    if (!waitSeconds || Date.now() >= deadline) {
+      throw new Error(`Vercel deployment is not ready for ${sha.slice(0, 7)}: ${lastDescription}`)
+    }
+
+    console.log(`Waiting for Vercel deployment: ${lastDescription}`)
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
   }
 }
 
@@ -112,7 +143,7 @@ async function scanVercelErrorLogs() {
 }
 
 const sha = await getCurrentSha()
-const vercel = await requireVercelStatus(sha)
+const vercel = waitSeconds > 0 ? await waitForVercelStatus(sha) : await requireVercelStatus(sha)
 const smoke = await smokeChat()
 const logs = await scanVercelErrorLogs()
 

@@ -1,5 +1,6 @@
 // app/api/chat/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { neon } from '@neondatabase/serverless'
@@ -49,6 +50,11 @@ function getSystemPrompt(): string {
     Help businesses understand how custom software, AI implementation, automation, and data tools can solve their operational problems.
     Be professional, concise, and consultative while guiding qualified prospects toward scheduling a call or sharing contact information.`
   }
+}
+
+function getCacheKey(prompt: string, systemPrompt: string): string {
+  const promptVersion = createHash('sha256').update(systemPrompt).digest('hex').slice(0, 12)
+  return `${promptVersion}:${prompt}`
 }
 
 function validateChatRequest(body: unknown): body is ChatRequest {
@@ -184,12 +190,13 @@ export async function POST(req: NextRequest) {
     // Cache check: only applies when it's the very first message and matches a chip
     const firstMessage = messages[0].content
     const isPromptCacheable = messages.length === 1 && CACHEABLE_PROMPTS.has(firstMessage)
+    const cacheKey = isPromptCacheable ? getCacheKey(firstMessage, systemPrompt) : firstMessage
     const shouldReadCache = isPromptCacheable && !skipCache && !refreshCache
     const shouldWriteCache = isPromptCacheable && !skipCache
 
     if (shouldReadCache) {
       const cached = await sql`
-        SELECT response FROM response_cache WHERE prompt = ${firstMessage} LIMIT 1
+        SELECT response FROM response_cache WHERE prompt = ${cacheKey} LIMIT 1
       `
       if (cached.length > 0) {
         const cachedResponse = cached[0].response
@@ -238,7 +245,7 @@ export async function POST(req: NextRequest) {
             const { done, value } = await reader.read()
             if (done) {
               if (shouldWriteCache && aiResponse) {
-                upsertCachedResponse(firstMessage, aiResponse)
+                upsertCachedResponse(cacheKey, aiResponse)
                   .then(() => console.log(`💾 Cached response for: "${firstMessage}"`))
                   .catch(err => console.error('Failed to cache response:', err))
               }
@@ -300,7 +307,7 @@ export async function POST(req: NextRequest) {
 
     // Store in cache if this was a cacheable first message (fire and forget)
     if (shouldWriteCache) {
-      upsertCachedResponse(firstMessage, aiResponse).catch(err => console.error('Failed to cache response:', err))
+      upsertCachedResponse(cacheKey, aiResponse).catch(err => console.error('Failed to cache response:', err))
       console.log(`💾 Cached response for: "${firstMessage}"`)
     }
 

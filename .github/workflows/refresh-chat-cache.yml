@@ -1,0 +1,48 @@
+name: Refresh Chat Cache
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'prompts/system-prompt.md'
+      - 'app/api/chat/route.ts'
+      - 'scripts/refresh-chat-cache.mjs'
+      - 'scripts/verify-production.mjs'
+      - '.github/workflows/refresh-chat-cache.yml'
+  workflow_dispatch:
+
+jobs:
+  refresh-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure verification environment
+        run: |
+          {
+            echo "CHAT_PROD_BASE_URL=https://www.archpointlabs.com"
+            echo "CHAT_CACHE_BASE_URL=https://www.archpointlabs.com"
+            echo "GITHUB_REPOSITORY=${{ github.repository }}"
+            echo "GIT_SHA=${{ github.sha }}"
+            echo "VERCEL_PROJECT_NAME=archpointlabs"
+            echo "VERCEL_SCOPE=matts-projects-227e84a3"
+            echo "VERCEL_TOKEN=${{ secrets.VERCEL_TOKEN }}"
+            echo "VERIFY_PROD_WAIT_SECONDS=600"
+          } > .env.local
+
+      - name: Wait for production deployment
+        run: npm run verify:prod
+
+      - name: Refresh production chat cache
+        run: npm run refresh:chat-cache
