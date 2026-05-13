@@ -572,7 +572,7 @@ export default function Chat() {
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
           className={`absolute top-0 isolate flex flex-col items-center justify-center w-full px-4 ${isMobile ? "left-1/2 max-w-[672px]" : "max-w-[560px]"}`}
-          style={!isMobile ? { top: hasMessages ? "13%" : "30%", right: "clamp(24px, 5vw, 72px)", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
+          style={!isMobile ? { top: hasMessages ? "13%" : "30%", right: "clamp(48px, calc(48px + (100vw - 1200px) * 0.18), 176px)", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
           initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: isMobile ? "-50%" : 0, opacity: isMobile ? 1 : 0 }}
           animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: isMobile ? "-50%" : 0, opacity: 1 }}
           transition={{
