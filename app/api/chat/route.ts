@@ -18,6 +18,51 @@ const CACHEABLE_PROMPTS = new Set([
 ])
 
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5.4-mini'
+const CACHED_STREAM_INITIAL_DELAY_MS = 300
+const CACHED_STREAM_CHUNK_DELAY_MS = 22
+const CACHED_STREAM_CHUNK_SIZE = 18
+
+const CURATED_CACHE_RESPONSES: Record<string, string> = {
+  "Can you help with AI implementation?": `Yes. Archpoint Labs helps businesses turn practical AI ideas into working software, not just demos.
+
+That can mean adding AI to an existing workflow, building an internal assistant, automating document-heavy processes, connecting AI to your database or business systems, or creating a custom app where AI handles the repetitive analysis and your team stays in control.
+
+A good first step is usually a short discovery call: what process is slow, what information the team relies on, where the data lives, and what a useful first version would need to do.
+
+If you have a workflow in mind, what are you hoping AI could take off your team's plate?`,
+
+  "What makes Archpoint Labs different?": `Archpoint Labs is a senior-led software and AI studio focused on practical business outcomes.
+
+The difference is that Matt brings enterprise engineering experience into small and mid-sized business problems: messy workflows, spreadsheet-heavy operations, manual reporting, disconnected systems, and ideas that need to become real products.
+
+The work tends to be custom and operationally specific. Instead of forcing a generic tool into your process, Archpoint Labs designs around how your team already works, then builds the software, automation, integrations, and AI pieces needed to make the process faster and easier.
+
+That is also why Milo exists. This chat experience is a small proof point of how Archpoint Labs thinks about useful AI: integrated into the workflow, easy to use, and tied to a clear business purpose.`,
+
+  "Tell me about your recent projects": `A few recent examples:
+
+**School Psychologist Workflow Platform**
+
+Archpoint Labs built custom software for an educational services company serving school psychologists. The platform replaced a manual reporting process that took about an hour per student with a workflow that now takes minutes, giving the team a cleaner interface and a backend built around their real caseload.
+
+**AIcreage Mineral Rights Acquisition Platform**
+
+Matt Stogner, the founder of Archpoint Labs, is currently CTO at AIcreage. AIcreage is applying AI to mineral rights acquisition and landman workflows, including courthouse record ingestion, deed parsing, ownership intelligence, and tract-level review. It is a good example of Matt leading an AI-native product in a complex, document-heavy industry. Public site: https://www.aicreage.com.
+
+**Archpoint Claims**
+
+Archpoint Claims started as a custom software build for one client and quickly grew into a broader claims processing platform. It helps teams move away from manual claims workflows and into purpose-built software that saves significant time and money. Public site: https://archpointclaims.com.
+
+The common thread is custom software that replaces slow, manual operational work with focused tools built around the business.`,
+
+  "I'm interested in custom software development": `That is exactly the kind of work Archpoint Labs focuses on.
+
+Custom software is usually the right fit when your business has a process that is too specific for off-the-shelf tools: internal dashboards, client portals, workflow platforms, reporting systems, document processing, integrations, or AI-assisted tools that need to match how your team actually operates.
+
+Archpoint Labs can help shape the idea, scope the first useful version, design the interface, build the app, connect the data, deploy it, and keep improving it after launch.
+
+The fastest way to figure out fit is to start with the workflow. What are you trying to build, replace, or automate?`,
+}
 
 type Message = {
   role: 'user' | 'assistant' | 'system'
@@ -55,6 +100,52 @@ function getSystemPrompt(): string {
 function getCacheKey(prompt: string, systemPrompt: string): string {
   const promptVersion = createHash('sha256').update(systemPrompt).digest('hex').slice(0, 12)
   return `${promptVersion}:${prompt}`
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function createTextStream(text: string) {
+  const encoder = new TextEncoder()
+  let offset = 0
+  let started = false
+
+  return new ReadableStream({
+    async pull(controller) {
+      if (!started) {
+        started = true
+        await sleep(CACHED_STREAM_INITIAL_DELAY_MS)
+      }
+
+      if (offset >= text.length) {
+        controller.close()
+        return
+      }
+
+      const nextOffset = Math.min(text.length, offset + CACHED_STREAM_CHUNK_SIZE)
+      const chunk = text.slice(offset, nextOffset)
+      offset = nextOffset
+      controller.enqueue(encoder.encode(chunk))
+
+      if (offset < text.length) {
+        await sleep(CACHED_STREAM_CHUNK_DELAY_MS)
+      }
+    },
+  })
+}
+
+function textResponse(text: string, stream: boolean) {
+  if (stream) {
+    return new Response(createTextStream(text), {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+      },
+    })
+  }
+
+  return NextResponse.json({ message: text })
 }
 
 function validateChatRequest(body: unknown): body is ChatRequest {
@@ -191,8 +282,15 @@ export async function POST(req: NextRequest) {
     const firstMessage = messages[0].content
     const isPromptCacheable = messages.length === 1 && CACHEABLE_PROMPTS.has(firstMessage)
     const cacheKey = isPromptCacheable ? getCacheKey(firstMessage, systemPrompt) : firstMessage
+    const curatedResponse = isPromptCacheable ? CURATED_CACHE_RESPONSES[firstMessage] : undefined
     const shouldReadCache = isPromptCacheable && !skipCache && !refreshCache
     const shouldWriteCache = isPromptCacheable && !skipCache
+
+    if (refreshCache && curatedResponse) {
+      await upsertCachedResponse(cacheKey, curatedResponse)
+      console.log(`💾 Cached curated response for: "${firstMessage}"`)
+      return textResponse(curatedResponse, stream)
+    }
 
     if (shouldReadCache) {
       const cached = await sql`
@@ -202,15 +300,7 @@ export async function POST(req: NextRequest) {
         const cachedResponse = cached[0].response
         console.log(`⚡ Cache hit for: "${firstMessage}"`)
         if (!skipLog) logConversation(sessionId, messages, cachedResponse, userInfo).catch(console.error)
-        if (stream) {
-          return new Response(cachedResponse, {
-            headers: {
-              'Content-Type': 'text/plain; charset=utf-8',
-              'Cache-Control': 'no-cache, no-transform',
-            },
-          })
-        }
-        return NextResponse.json({ message: cachedResponse })
+        return textResponse(cachedResponse, stream)
       }
     }
 
