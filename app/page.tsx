@@ -571,8 +571,8 @@ export default function Chat() {
         {/* Chat wrapper */}
         <motion.div
           key={mounted && isMobile ? "m" : "d"}
-          className={`absolute top-0 isolate flex flex-col items-center justify-center w-full px-4 ${isMobile ? "left-1/2 max-w-[672px]" : "max-w-[560px]"}`}
-          style={!isMobile ? { top: hasMessages ? "13%" : "30%", right: "clamp(48px, calc(48px + (100vw - 1200px) * 0.18), 176px)", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
+          className={`absolute top-0 isolate flex flex-col items-center justify-center w-full px-4 ${isMobile ? "left-1/2 max-w-[672px]" : ""}`}
+          style={!isMobile ? { top: hasMessages ? "13%" : "30%", right: "clamp(48px, 8vw, 176px)", width: "clamp(560px, 44vw, 680px)", transition: "top 0.6s cubic-bezier(0.4,0,0.2,1)" } : undefined}
           initial={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : "-40dvh", x: isMobile ? "-50%" : 0, opacity: isMobile ? 1 : 0 }}
           animate={{ y: isMobile ? (isTablet ? "47svh" : "40svh") : 0, x: isMobile ? "-50%" : 0, opacity: 1 }}
           transition={{
@@ -752,7 +752,7 @@ export default function Chat() {
               style={{ border: "1px solid rgba(255,255,255,0.15)" }}
               initial={false}
               animate={arrived
-                ? { width: "min(560px, calc(100vw - 48px))", height: desktopInputHeight, borderRadius: desktopInputHeight > 64 ? 16 : 9999 }
+                ? { width: "100%", height: desktopInputHeight, borderRadius: desktopInputHeight > 64 ? 16 : 9999 }
                 : { width: 48, height: 48, borderRadius: 9999 }
               }
               transition={{
