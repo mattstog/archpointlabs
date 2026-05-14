@@ -2,26 +2,40 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next"
 
+const siteUrl = "https://archpointlabs.com";
+const siteDescription =
+  "Archpoint Labs builds custom software, AI automations, workflow platforms, and data tools for businesses that need practical technology built around their operations.";
+
 export const metadata: Metadata = {
-  // ✅ Use apex domain as the base
-  metadataBase: new URL("https://archpointlabs.com"),
-  title: "Archpoint Labs",
-  description:
-    "Archpoint Labs builds what's next — custom apps, websites, and automations that elevate your business. Chat with our AI Assistant, Milo, to explore solutions designed to help your business grow.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Archpoint Labs | Custom Software, AI Automation & Workflow Platforms",
+    template: "%s | Archpoint Labs",
+  },
+  description: siteDescription,
+  keywords: [
+    "custom software development",
+    "AI automation",
+    "business process automation",
+    "workflow software",
+    "AI implementation",
+    "custom web applications",
+    "data engineering",
+    "Dallas software consultant",
+    "Next.js developer",
+    "Python automation",
+  ],
   icons: {
     icon: "/logo-apl-favicon.svg",
     apple: "/sharing/apple-touch-icon-apl.png",
   },
-  // ✅ Explicit canonical
   alternates: {
-    canonical: "/", // resolves to https://archpointlabs.com/
+    canonical: "/",
   },
   openGraph: {
-    title: "Archpoint Labs",
-    description:
-      "Custom apps, websites, and AI automations that elevate your business.",
-    // ✅ Match apex here too
-    url: "https://archpointlabs.com/",
+    title: "Archpoint Labs | Custom Software, AI Automation & Workflow Platforms",
+    description: siteDescription,
+    url: `${siteUrl}/`,
     siteName: "Archpoint Labs",
     images: [
       {
@@ -34,9 +48,97 @@ export const metadata: Metadata = {
     locale: "en_US",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Archpoint Labs | Custom Software, AI Automation & Workflow Platforms",
+    description: siteDescription,
+    images: ["/sharing/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   other: {
     "mobile-web-app-capable": "yes",
   },
+};
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
+      name: "Archpoint Labs",
+      url: siteUrl,
+      logo: `${siteUrl}/logo-apl-favicon.svg`,
+      email: "matt@archpointlabs.com",
+      founder: {
+        "@type": "Person",
+        name: "Matt Stogner",
+        jobTitle: "Founder",
+      },
+      areaServed: "United States",
+      knowsAbout: [
+        "Custom software development",
+        "AI implementation",
+        "Business process automation",
+        "Workflow platforms",
+        "Data engineering",
+        "API integrations",
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      name: "Archpoint Labs",
+      url: siteUrl,
+      publisher: { "@id": `${siteUrl}/#organization` },
+      inLanguage: "en-US",
+    },
+    {
+      "@type": "ProfessionalService",
+      "@id": `${siteUrl}/#professional-service`,
+      name: "Archpoint Labs",
+      url: siteUrl,
+      email: "matt@archpointlabs.com",
+      areaServed: "United States",
+      founder: {
+        "@type": "Person",
+        name: "Matt Stogner",
+      },
+      serviceType: [
+        "Custom software development",
+        "AI automation",
+        "Workflow software",
+        "Data engineering",
+        "API integrations",
+      ],
+    },
+    {
+      "@type": "ItemList",
+      "@id": `${siteUrl}/#services`,
+      name: "Archpoint Labs services",
+      itemListElement: [
+        "Custom business software",
+        "AI implementation and automation",
+        "Workflow platforms",
+        "Data engineering and reporting tools",
+        "API integrations",
+      ].map((name, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name,
+      })),
+    },
+  ],
 };
 
 export const viewport: Viewport = {
@@ -53,6 +155,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         {children}
         <Analytics />
       </body>
