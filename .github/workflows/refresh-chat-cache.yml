@@ -31,8 +31,8 @@ jobs:
       - name: Configure verification environment
         run: |
           {
-            echo "CHAT_PROD_BASE_URL=https://www.archpointlabs.com"
-            echo "CHAT_CACHE_BASE_URL=https://www.archpointlabs.com"
+            echo "CHAT_PROD_BASE_URL=https://archpointlabs.com"
+            echo "CHAT_CACHE_BASE_URL=https://archpointlabs.com"
             echo "GITHUB_REPOSITORY=${{ github.repository }}"
             echo "GIT_SHA=${{ github.sha }}"
             echo "VERCEL_PROJECT_NAME=archpointlabs"

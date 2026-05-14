@@ -4,7 +4,7 @@ import { promisify } from 'node:util'
 const execFileAsync = promisify(execFile)
 
 const repo = process.env.GITHUB_REPOSITORY || 'Archpoint-Labs/archpointlabs'
-const prodUrl = process.env.CHAT_PROD_BASE_URL || 'https://www.archpointlabs.com'
+const prodUrl = process.env.CHAT_PROD_BASE_URL || 'https://archpointlabs.com'
 const vercelProject = process.env.VERCEL_PROJECT_NAME || 'archpointlabs'
 const waitSeconds = Number.parseInt(process.env.VERIFY_PROD_WAIT_SECONDS || '0', 10)
 const pollIntervalMs = 10_000
