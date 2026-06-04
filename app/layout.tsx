@@ -21,7 +21,17 @@ export const metadata: Metadata = {
     "AI implementation",
     "custom web applications",
     "data engineering",
+    "custom software consultant",
+    "custom software Texas",
+    "AI automation consultant",
+    "business automation consultant",
     "Dallas software consultant",
+    "Matt Stogner",
+    "Matthew Stogner",
+    "Matt Stogner software",
+    "Matthew Stogner software",
+    "Archpoint Labs Matt Stogner",
+    "Archpoint Labs Matthew Stogner",
     "Next.js developer",
     "Python automation",
   ],
@@ -83,9 +93,22 @@ const structuredData = {
       founder: {
         "@type": "Person",
         name: "Matt Stogner",
-        jobTitle: "Founder",
+        alternateName: "Matthew Stogner",
+        jobTitle: "Founder and technical lead",
       },
-      areaServed: "United States",
+      areaServed: [
+        {
+          "@type": "City",
+          name: "Dallas",
+          containedInPlace: {
+            "@type": "State",
+            name: "Texas",
+          },
+        },
+        "Dallas-Fort Worth",
+        "Texas",
+        "United States",
+      ],
       knowsAbout: [
         "Custom software development",
         "AI implementation",
@@ -109,10 +132,23 @@ const structuredData = {
       name: "Archpoint Labs",
       url: siteUrl,
       email: "matt@archpointlabs.com",
-      areaServed: "United States",
+      areaServed: [
+        {
+          "@type": "City",
+          name: "Dallas",
+          containedInPlace: {
+            "@type": "State",
+            name: "Texas",
+          },
+        },
+        "Dallas-Fort Worth",
+        "Texas",
+        "United States",
+      ],
       founder: {
         "@type": "Person",
         name: "Matt Stogner",
+        alternateName: "Matthew Stogner",
       },
       serviceType: [
         "Custom software development",

@@ -14,31 +14,6 @@ import { ExternalLink } from "lucide-react"
 const SUBHEAD =
   "We develop custom software solutions, like apps, automations and AI agents that fully unlock the potential of your business. Chat with Milo, our AI Assistant, to discover what Archpoint Labs can do for you."
 
-const services = [
-  {
-    title: "Custom Software Development",
-    body: "Purpose-built web apps, internal tools, dashboards, portals, and workflow platforms designed around the way your team actually works.",
-  },
-  {
-    title: "AI Implementation & Automation",
-    body: "Practical AI agents, document processing, workflow automation, and model integrations that reduce repetitive work without adding complexity.",
-  },
-  {
-    title: "Data Engineering & Reporting",
-    body: "Databases, reporting systems, analytics workflows, and operational data tools that make business information easier to trust and act on.",
-  },
-  {
-    title: "API Integrations & Backend Systems",
-    body: "Reliable backend services, third-party integrations, cloud deployment, and data pipelines connecting the tools your business already uses.",
-  },
-]
-
-const proofPoints = [
-  "Automated an educational reporting workflow that previously took about an hour per student.",
-  "Lead development of AIcreage, an AI-native mineral rights acquisition platform for landman workflows.",
-  "Built Archpoint Claims from a client software project into a broader claims processing platform.",
-]
-
 type Message = {
   id: string
   role: "user" | "assistant"
@@ -853,48 +828,6 @@ export default function Chat() {
 
         </motion.div>
       </div>
-
-      <section className="relative z-10 px-6 pb-24 md:pb-32">
-        <div className="mx-auto grid max-w-6xl gap-12 border-t border-white/10 pt-16 md:grid-cols-[0.9fr_1.1fr] md:pt-20">
-          <div className="text-white">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[#ef382e]">
-              Software, automation, and AI
-            </p>
-            <h2 className="text-3xl font-extrabold leading-tight md:text-4xl">
-              Custom technology for messy, manual business workflows.
-            </h2>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-white/70">
-              Archpoint Labs helps businesses replace spreadsheets, disconnected systems, and repetitive manual work with custom software, AI automation, and data tools built for real operations.
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            {services.map((service) => (
-              <article
-                key={service.title}
-                className="rounded-lg border border-white/10 bg-white/[0.04] p-5 text-white backdrop-blur-sm"
-              >
-                <h3 className="text-lg font-bold">{service.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-white/70">{service.body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-
-        <div className="mx-auto mt-14 max-w-6xl border-t border-white/10 pt-10">
-          <h2 className="text-2xl font-extrabold text-white">Recent proof of work</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {proofPoints.map((point) => (
-              <p
-                key={point}
-                className="rounded-lg border border-white/10 bg-white/[0.04] p-5 text-sm leading-relaxed text-white/70"
-              >
-                {point}
-              </p>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <PortfolioModal item={selectedItem} onClose={() => setSelectedItem(null)} isMobile={isMobile} />
       <style jsx global>{`
