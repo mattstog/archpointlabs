@@ -1,11 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, MessageSquare, User, Clock, Globe, ArrowUpDown, Trash2, Bookmark } from 'lucide-react'
+import { Calendar, MessageSquare, User, Clock, Globe, ArrowUpDown, Trash2, Bookmark, MapPin } from 'lucide-react'
 
 type Message = {
   role: 'user' | 'assistant' | 'system'
   content: string
+}
+
+type UserLocation = {
+  city?: string
+  region?: string
+  country?: string
+  latitude?: string
+  longitude?: string
+  timezone?: string
 }
 
 type Conversation = {
@@ -13,6 +22,7 @@ type Conversation = {
   session_id: string
   ip: string
   user_agent: string
+  location?: UserLocation | null
   message_count: number
   messages: Message[]
   ai_response: string
@@ -71,6 +81,15 @@ export default function AdminDashboard() {
 
   const unreadCount = conversations.filter(isUnread).length
 
+  const formatLocation = (location?: UserLocation | null) => {
+    if (!location) return 'Unknown location'
+
+    const cityRegion = [location.city, location.region].filter(Boolean).join(', ')
+    const primary = [cityRegion, location.country].filter(Boolean).join(' · ')
+
+    return primary || location.timezone || 'Unknown location'
+  }
+
   const deleteConversation = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation()
     await fetch(`/api/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete' }) })
@@ -94,9 +113,11 @@ export default function AdminDashboard() {
   const filteredConversations = conversations
     .filter(conv => {
       if (!conv || !conv.ts) return false
+      const locationText = formatLocation(conv.location).toLowerCase()
       const matchesSearch =
         conv.session_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         conv.ip.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        locationText.includes(searchTerm.toLowerCase()) ||
         JSON.stringify(conv.messages).toLowerCase().includes(searchTerm.toLowerCase())
       const convDate = new Date(conv.ts)
       const now = new Date()
@@ -239,7 +260,7 @@ export default function AdminDashboard() {
         <div className="mb-5 flex flex-col md:flex-row gap-3">
           <input
             type="text"
-            placeholder="Search conversations, IPs, or content..."
+            placeholder="Search conversations, locations, IPs, or content..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none border border-white/10 focus:border-white/30 transition text-sm"
@@ -289,8 +310,9 @@ export default function AdminDashboard() {
             </div>
 
             <h2 className="text-lg font-semibold mb-4 text-white">Conversation Details</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 text-xs text-white/40">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6 text-xs text-white/40">
               <div className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{selectedConversation.session_id.slice(0, 10)}...</div>
+              <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{formatLocation(selectedConversation.location)}</div>
               <div className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" />{selectedConversation.ip}</div>
               <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{formatDate(selectedConversation)}</div>
               <div className="flex items-center gap-1.5"><MessageSquare className="w-3.5 h-3.5" />{selectedConversation.message_count} messages</div>
@@ -362,6 +384,7 @@ export default function AdminDashboard() {
                       </h3>
                       <div className="flex flex-wrap gap-4 text-xs text-white/30">
                         <div className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{conversation.session_id.slice(0, 8)}...</div>
+                        <div className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{formatLocation(conversation.location)}</div>
                         <div className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" />{conversation.ip}</div>
                         <div className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatDate(conversation)}</div>
                         <div className="flex items-center gap-1"><MessageSquare className="w-3.5 h-3.5" />{conversation.message_count} messages</div>

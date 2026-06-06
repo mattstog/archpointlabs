@@ -72,7 +72,17 @@ type Message = {
 type UserInfo = { 
   ip?: string | null
   userAgent?: string | null
+  location?: UserLocation | null
   timestamp?: string 
+}
+
+type UserLocation = {
+  city?: string
+  region?: string
+  country?: string
+  latitude?: string
+  longitude?: string
+  timezone?: string
 }
 
 type ChatRequest = {
@@ -203,8 +213,53 @@ function createOpenAIRequestBody(systemPrompt: string, messages: Message[], stre
   }
 }
 
+let locationColumnReady: Promise<void> | null = null
+
+function getHeader(req: NextRequest, name: string) {
+  const value = req.headers.get(name)
+  if (!value) return undefined
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+function getUserLocation(req: NextRequest): UserLocation | null {
+  const location: UserLocation = {
+    city: getHeader(req, 'x-vercel-ip-city'),
+    region: getHeader(req, 'x-vercel-ip-country-region'),
+    country: getHeader(req, 'x-vercel-ip-country'),
+    latitude: getHeader(req, 'x-vercel-ip-latitude'),
+    longitude: getHeader(req, 'x-vercel-ip-longitude'),
+    timezone: getHeader(req, 'x-vercel-ip-timezone'),
+  }
+
+  const knownEntries = Object.entries(location).filter(([, value]) => Boolean(value))
+  if (knownEntries.length === 0) return null
+
+  return Object.fromEntries(knownEntries) as UserLocation
+}
+
+async function ensureConversationLocationColumn() {
+  locationColumnReady ??= sql`
+    ALTER TABLE conversations
+    ADD COLUMN IF NOT EXISTS location JSONB
+  `
+    .then(() => undefined)
+    .catch((error) => {
+      locationColumnReady = null
+      throw error
+    })
+
+  return locationColumnReady
+}
+
 async function logConversation(sessionId: string, messages: Message[], response: string, userInfo?: UserInfo) {
   try {
+    await ensureConversationLocationColumn()
+    const locationJson = userInfo?.location ? JSON.stringify(userInfo.location) : null
+
     // Update existing row for this session if it exists, otherwise insert a new one.
     // This prevents duplicate rows from being created for each message in a conversation.
     const updated = await sql`
@@ -213,6 +268,7 @@ async function logConversation(sessionId: string, messages: Message[], response:
         message_count = ${messages.length + 1},
         messages      = ${JSON.stringify(messages)}::jsonb,
         ai_response   = ${response},
+        location      = COALESCE(${locationJson}::jsonb, location),
         ts            = NOW()
       WHERE session_id = ${sessionId}
       RETURNING id
@@ -220,11 +276,12 @@ async function logConversation(sessionId: string, messages: Message[], response:
 
     if (updated.length === 0) {
       await sql`
-        INSERT INTO conversations (session_id, ip, user_agent, message_count, messages, ai_response)
+        INSERT INTO conversations (session_id, ip, user_agent, location, message_count, messages, ai_response)
         VALUES (
           ${sessionId},
           ${userInfo?.ip ?? 'unknown'},
           ${userInfo?.userAgent ?? 'unknown'},
+          ${locationJson}::jsonb,
           ${messages.length + 1},
           ${JSON.stringify(messages)}::jsonb,
           ${response}
@@ -275,6 +332,7 @@ export async function POST(req: NextRequest) {
     const userInfo: UserInfo = {
       ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
       userAgent: req.headers.get('user-agent'),
+      location: getUserLocation(req),
       timestamp: new Date().toISOString(),
     }
 
