@@ -4,40 +4,50 @@ import { sendDailyDigest } from '@/lib/email'
 
 export const runtime = 'nodejs'
 
+function isAuthorized(req: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) return true
+
+  const authHeader = req.headers.get('authorization')
+  const querySecret = req.nextUrl.searchParams.get('secret')
+
+  return authHeader === `Bearer ${cronSecret}` || querySecret === cronSecret
+}
+
+async function runDigest() {
+  const result = await sendDailyDigest()
+
+  if (result.success) {
+    return NextResponse.json({
+      success: true,
+      message: result.message,
+      conversationCount: result.count,
+    })
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: result.message,
+    },
+    { status: 500 }
+  )
+}
+
 /**
  * API endpoint to manually trigger or be called by a cron job
  * Can be secured with an API key for production use
  */
 export async function POST(req: NextRequest) {
   try {
-    // Optional: Verify cron secret for security
-    const authHeader = req.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
-
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!isAuthorized(req)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    const result = await sendDailyDigest()
-
-    if (result.success) {
-      return NextResponse.json({
-        success: true,
-        message: result.message,
-        conversationCount: result.count,
-      })
-    } else {
-      return NextResponse.json(
-        {
-          success: false,
-          error: result.message,
-        },
-        { status: 500 }
-      )
-    }
+    return runDigest()
   } catch (error) {
     console.error('Error in send-digest endpoint:', error)
     return NextResponse.json(
@@ -51,28 +61,18 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * GET endpoint for manual testing
+ * GET endpoint for Vercel Cron and manual testing.
  */
 export async function GET(req: NextRequest) {
-  // Only allow in development or with secret
-  const secret = req.nextUrl.searchParams.get('secret')
-  const allowedSecret = process.env.CRON_SECRET
-
-  if (process.env.NODE_ENV === 'production' && secret !== allowedSecret) {
+  if (!isAuthorized(req)) {
     return NextResponse.json(
-      { error: 'Not available in production without secret' },
-      { status: 403 }
+      { error: 'Unauthorized' },
+      { status: 401 }
     )
   }
 
   try {
-    const result = await sendDailyDigest()
-
-    return NextResponse.json({
-      success: result.success,
-      message: result.message,
-      conversationCount: result.count,
-    })
+    return runDigest()
   } catch (error) {
     return NextResponse.json(
       {
