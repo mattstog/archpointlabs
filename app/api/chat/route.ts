@@ -21,6 +21,8 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5.4-mini'
 const CACHED_STREAM_INITIAL_DELAY_MS = 300
 const CACHED_STREAM_CHUNK_DELAY_MS = 22
 const CACHED_STREAM_CHUNK_SIZE = 18
+const STREAM_ERROR_RESPONSE =
+  "Sorry, I'm having trouble reaching the AI service right now. Please try again in a moment."
 
 const CURATED_CACHE_RESPONSES: Record<string, string> = {
   "Can you help with AI implementation?": `Yes. Archpoint Labs helps businesses turn practical AI ideas into working software, not just demos.
@@ -31,13 +33,13 @@ A good first step is usually a short discovery call: what process is slow, what 
 
 If you have a workflow in mind, what are you hoping AI could take off your team's plate?`,
 
-  "What makes Archpoint Labs different?": `Archpoint Labs is a senior-led software and AI studio focused on practical business outcomes.
+  "What makes Archpoint Labs different?": `Archpoint Labs is led by Matt Stogner, the founder and principal technical lead. Matt works directly with clients to turn messy business workflows into practical software, automation, and AI systems.
 
-The difference is that Matt brings enterprise engineering experience into small and mid-sized business problems: messy workflows, spreadsheet-heavy operations, manual reporting, disconnected systems, and ideas that need to become real products.
+The difference is that Archpoint Labs is not trying to force a generic tool into your process. The work starts with how your team actually operates: spreadsheets, manual reporting, disconnected systems, document-heavy review, and ideas that need to become real products.
 
-The work tends to be custom and operationally specific. Instead of forcing a generic tool into your process, Archpoint Labs designs around how your team already works, then builds the software, automation, integrations, and AI pieces needed to make the process faster and easier.
+From there, Archpoint designs and builds the custom app, automation, integration, data workflow, or AI agent that fits the job. The goal is practical: save time, reduce errors, improve visibility, and give the business a system it can actually use.
 
-That is also why Milo exists. This chat experience is a small proof point of how Archpoint Labs thinks about useful AI: integrated into the workflow, easy to use, and tied to a clear business purpose.`,
+Milo is part of that philosophy. This chat is a small proof point of how Archpoint thinks about useful AI: integrated into the workflow, easy to use, and tied to a clear business purpose.`,
 
   "Tell me about your recent projects": `A few recent examples:
 
@@ -199,6 +201,16 @@ function getResponseText(data: unknown): string {
     .map((content) => content.text)
     .join('')
     .trim()
+}
+
+function getStreamError(data: unknown) {
+  if (!data || typeof data !== 'object') return null
+  const event = data as {
+    error?: { code?: string; message?: string; type?: string }
+    response?: { error?: { code?: string; message?: string } }
+  }
+
+  return event.error ?? event.response?.error ?? null
 }
 
 function createOpenAIRequestBody(systemPrompt: string, messages: Message[], stream = false) {
@@ -386,6 +398,7 @@ export async function POST(req: NextRequest) {
       const reader = openaiRes.body.getReader()
       let buffer = ''
       let aiResponse = ''
+      let streamedOutput = false
 
       const streamBody = new ReadableStream({
         async pull(controller) {
@@ -419,9 +432,33 @@ export async function POST(req: NextRequest) {
                 const event = JSON.parse(payload) as { type?: string; delta?: string; text?: string; response?: unknown }
                 if (event.type === 'response.output_text.delta' && typeof event.delta === 'string') {
                   aiResponse += event.delta
+                  streamedOutput = true
                   controller.enqueue(encoder.encode(event.delta))
+                } else if (event.type === 'response.output_text.done' && typeof event.text === 'string' && !aiResponse) {
+                  aiResponse = event.text
+                  if (!streamedOutput) {
+                    streamedOutput = true
+                    controller.enqueue(encoder.encode(event.text))
+                  }
                 } else if (event.type === 'response.completed' && !aiResponse) {
-                  aiResponse = getResponseText(event.response)
+                  const completedText = getResponseText(event.response)
+                  if (completedText) {
+                    aiResponse = completedText
+                    if (!streamedOutput) {
+                      streamedOutput = true
+                      controller.enqueue(encoder.encode(completedText))
+                    }
+                  }
+                } else if (event.type === 'error' || event.type === 'response.failed') {
+                  console.error('OpenAI stream error:', getStreamError(event) ?? event)
+                  if (!streamedOutput) {
+                    aiResponse = STREAM_ERROR_RESPONSE
+                    streamedOutput = true
+                    controller.enqueue(encoder.encode(STREAM_ERROR_RESPONSE))
+                  }
+                  controller.close()
+                  reader.cancel().catch(console.error)
+                  return
                 }
               } catch (error) {
                 console.error('Failed to parse OpenAI stream event:', error)
